@@ -172,89 +172,89 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ARCH-01 | TBD | Pending |
-| ARCH-02 | TBD | Pending |
-| ARCH-03 | TBD | Pending |
-| ARCH-04 | TBD | Pending |
-| ARCH-05 | TBD | Pending |
-| BACK-01 | TBD | Pending |
-| BACK-02 | TBD | Pending |
-| BACK-03 | TBD | Pending |
-| BACK-04 | TBD | Pending |
-| BACK-05 | TBD | Pending |
-| BACK-06 | TBD | Pending |
-| FRNT-01 | TBD | Pending |
-| FRNT-02 | TBD | Pending |
-| FRNT-03 | TBD | Pending |
-| FRNT-04 | TBD | Pending |
-| AUTH-01 | TBD | Pending |
-| AUTH-02 | TBD | Pending |
-| AUTH-03 | TBD | Pending |
-| AUTH-04 | TBD | Pending |
-| AUTH-05 | TBD | Pending |
-| COMP-01 | TBD | Pending |
-| COMP-02 | TBD | Pending |
-| COMP-03 | TBD | Pending |
-| COMP-04 | TBD | Pending |
-| COMP-05 | TBD | Pending |
-| SETUP-01 | TBD | Pending |
-| SETUP-02 | TBD | Pending |
-| SETUP-03 | TBD | Pending |
-| SETUP-04 | TBD | Pending |
-| SETUP-05 | TBD | Pending |
-| SETUP-06 | TBD | Pending |
-| SETUP-07 | TBD | Pending |
-| CONT-01 | TBD | Pending |
-| CONT-02 | TBD | Pending |
-| CONT-03 | TBD | Pending |
-| CONT-04 | TBD | Pending |
-| CONT-05 | TBD | Pending |
-| SALE-01 | TBD | Pending |
-| SALE-02 | TBD | Pending |
-| SALE-03 | TBD | Pending |
-| SALE-04 | TBD | Pending |
-| SALE-05 | TBD | Pending |
-| SALE-06 | TBD | Pending |
-| SALE-07 | TBD | Pending |
-| SALE-08 | TBD | Pending |
-| SALE-09 | TBD | Pending |
-| SPND-01 | TBD | Pending |
-| SPND-02 | TBD | Pending |
-| SPND-03 | TBD | Pending |
-| SPND-04 | TBD | Pending |
-| SPND-05 | TBD | Pending |
-| SPND-06 | TBD | Pending |
-| SPND-07 | TBD | Pending |
-| ACCT-01 | TBD | Pending |
-| ACCT-02 | TBD | Pending |
-| ACCT-03 | TBD | Pending |
-| ACCT-04 | TBD | Pending |
-| ACCT-05 | TBD | Pending |
-| ACCT-06 | TBD | Pending |
-| ACCT-07 | TBD | Pending |
-| RPT-01 | TBD | Pending |
-| RPT-02 | TBD | Pending |
-| RPT-03 | TBD | Pending |
-| RPT-04 | TBD | Pending |
-| RPT-05 | TBD | Pending |
-| RPT-06 | TBD | Pending |
-| AUDT-01 | TBD | Pending |
-| AUDT-02 | TBD | Pending |
-| AUDT-03 | TBD | Pending |
-| AUDT-04 | TBD | Pending |
-| AUDT-05 | TBD | Pending |
-| CONF-01 | TBD | Pending |
-| CONF-02 | TBD | Pending |
-| CONF-03 | TBD | Pending |
-| CONF-04 | TBD | Pending |
-| CONF-05 | TBD | Pending |
-| CONF-06 | TBD | Pending |
+| ARCH-01 | Phase 1 | Pending |
+| ARCH-02 | Phase 1 | Pending |
+| ARCH-03 | Phase 1 | Pending |
+| ARCH-04 | Phase 1 | Pending |
+| ARCH-05 | Phase 1 | Pending |
+| BACK-01 | Phase 1 | Pending |
+| BACK-02 | Phase 1 | Pending |
+| BACK-03 | Phase 1 | Pending |
+| BACK-04 | Phase 1 | Pending |
+| BACK-05 | Phase 5 | Pending |
+| BACK-06 | Phase 1 | Pending |
+| FRNT-01 | Phase 1 | Pending |
+| FRNT-02 | Phase 5 | Pending |
+| FRNT-03 | Phase 1 | Pending |
+| FRNT-04 | Phase 1 | Pending |
+| AUTH-01 | Phase 2 | Pending |
+| AUTH-02 | Phase 2 | Pending |
+| AUTH-03 | Phase 2 | Pending |
+| AUTH-04 | Phase 2 | Pending |
+| AUTH-05 | Phase 2 | Pending |
+| COMP-01 | Phase 2 | Pending |
+| COMP-02 | Phase 2 | Pending |
+| COMP-03 | Phase 2 | Pending |
+| COMP-04 | Phase 2 | Pending |
+| COMP-05 | Phase 2 | Pending |
+| SETUP-01 | Phase 2 | Pending |
+| SETUP-02 | Phase 2 | Pending |
+| SETUP-03 | Phase 2 | Pending |
+| SETUP-04 | Phase 2 | Pending |
+| SETUP-05 | Phase 3 | Pending |
+| SETUP-06 | Phase 6 | Pending |
+| SETUP-07 | Phase 6 | Pending |
+| CONT-01 | Phase 3 | Pending |
+| CONT-02 | Phase 3 | Pending |
+| CONT-03 | Phase 3 | Pending |
+| CONT-04 | Phase 3 | Pending |
+| CONT-05 | Phase 3 | Pending |
+| SALE-01 | Phase 3 | Pending |
+| SALE-02 | Phase 3 | Pending |
+| SALE-03 | Phase 3 | Pending |
+| SALE-04 | Phase 3 | Pending |
+| SALE-05 | Phase 3 | Pending |
+| SALE-06 | Phase 3 | Pending |
+| SALE-07 | Phase 3 | Pending |
+| SALE-08 | Phase 3 | Pending |
+| SALE-09 | Phase 3 | Pending |
+| SPND-01 | Phase 4 | Pending |
+| SPND-02 | Phase 4 | Pending |
+| SPND-03 | Phase 4 | Pending |
+| SPND-04 | Phase 4 | Pending |
+| SPND-05 | Phase 4 | Pending |
+| SPND-06 | Phase 4 | Pending |
+| SPND-07 | Phase 4 | Pending |
+| ACCT-01 | Phase 4 | Pending |
+| ACCT-02 | Phase 4 | Pending |
+| ACCT-03 | Phase 4 | Pending |
+| ACCT-04 | Phase 4 | Pending |
+| ACCT-05 | Phase 4 | Pending |
+| ACCT-06 | Phase 4 | Pending |
+| ACCT-07 | Phase 4 | Pending |
+| RPT-01 | Phase 5 | Pending |
+| RPT-02 | Phase 5 | Pending |
+| RPT-03 | Phase 5 | Pending |
+| RPT-04 | Phase 5 | Pending |
+| RPT-05 | Phase 5 | Pending |
+| RPT-06 | Phase 5 | Pending |
+| AUDT-01 | Phase 2 | Pending |
+| AUDT-02 | Phase 2 | Pending |
+| AUDT-03 | Phase 3 | Pending |
+| AUDT-04 | Phase 2 | Pending |
+| AUDT-05 | Phase 6 | Pending |
+| CONF-01 | Phase 6 | Pending |
+| CONF-02 | Phase 6 | Pending |
+| CONF-03 | Phase 6 | Pending |
+| CONF-04 | Phase 6 | Pending |
+| CONF-05 | Phase 6 | Pending |
+| CONF-06 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 79 total
-- Mapped to phases: 0
-- Unmapped: 79
+- v1 requirements: 77 total
+- Mapped to phases: 77
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-31*
-*Last updated: 2026-05-31 after initial definition*
+*Last updated: 2026-05-31 after roadmap creation*
