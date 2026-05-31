@@ -1,0 +1,10 @@
+{
+  "permission": {
+    "read": {
+      "/Users/mali/Development/xai-bookkeeping/.opencode/get-shit-done/*": "allow"
+    },
+    "external_directory": {
+      "/Users/mali/Development/xai-bookkeeping/.opencode/get-shit-done/*": "allow"
+    }
+  }
+}
