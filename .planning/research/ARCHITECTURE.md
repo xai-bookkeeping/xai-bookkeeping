@@ -10,20 +10,23 @@
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│                      Web Application                         │
-│  Owner Dashboard | Invoices | Expenses | Contacts | Reports  │
+│                    Monorepo Workspace                        │
+│  apps/web (React/Vite) | apps/api (FastAPI) | shared docs     │
 ├─────────────────────────────────────────────────────────────┤
-│                    Application Services                      │
-│ Auth | Tenant Context | Permissions | Workflows | Audit       │
+│                    Frontend Application                      │
+│  Owner Dashboard | Tables | Forms | Workflows | Settings      │
 ├─────────────────────────────────────────────────────────────┤
-│                       Finance Domain                         │
-│ Customers | Suppliers | Invoices | Bills | Payments | VAT     │
+│                         API Boundary                         │
+│  OpenAPI Contracts | Auth Context | Tenant Context | RBAC      │
+├─────────────────────────────────────────────────────────────┤
+│                    FastAPI Backend Modules                    │
+│ Platform | Finance | Accounting | Reporting | Workflow | AI   │
 ├─────────────────────────────────────────────────────────────┤
 │                    Accounting Domain Core                     │
 │ Chart of Accounts | Journal Entries | Posting Rules | Periods │
 ├─────────────────────────────────────────────────────────────┤
 │                      Platform Foundation                      │
-│ Companies | Users | Roles | Custom Fields | Templates         │
+│ Companies | Themes | Users | Roles | Custom Fields | Audit     │
 ├─────────────────────────────────────────────────────────────┤
 │                       Persistence                             │
 │ PostgreSQL | Object Storage | Audit Event Store               │
@@ -34,72 +37,87 @@
 
 | Component | Responsibility | Typical Implementation |
 |-----------|----------------|------------------------|
-| Tenant/company context | Ensure every request operates inside exactly one company unless explicitly administering memberships. | Company-scoped middleware/context plus database constraints and query helpers. |
+| Frontend app | Authenticated business UI, dense tables, forms, dashboards, settings, and theming. | React/Vite app consuming typed OpenAPI clients from FastAPI. |
+| API boundary | Stable contract between frontend and backend. | FastAPI routers, Pydantic schemas, OpenAPI client generation. |
+| Tenant/company context | Ensure every request operates inside exactly one company unless explicitly administering memberships. | FastAPI dependency/middleware plus database constraints and query helpers. |
 | Identity and users | Login, invitations, memberships, and user lifecycle. | Auth provider or first-party auth tables, with company membership and role mapping. |
 | Permissions | Decide who can view, create, approve, edit, delete, export, or configure records. | Role/permission matrix with policy functions and tests. |
+| Company themes | Per-company logo, brand colors, invoice/report presentation settings. | Theme settings table, asset storage, frontend theme tokens, document-rendering context. |
 | Contacts | Customers, suppliers, TRNs, addresses, payment terms, custom fields. | Shared contact model with customer/supplier flags or separate bounded models. |
 | Documents | Invoices, supplier bills, line items, taxes, statuses, PDFs. | Structured document tables plus generated PDF files in object storage. |
 | Workflow engine | Approval and lifecycle transitions for invoices/bills. | Constrained state machine per document type; avoid free-form workflow scripting in v1. |
-| Ledger/posting engine | Convert business events into balanced journal entries. | Domain service that validates debits=credits and writes immutable postings. |
+| Ledger/posting engine | Convert business events into balanced journal entries. | Backend domain service that validates debits=credits and writes immutable postings. |
 | VAT engine | Apply UAE VAT defaults and produce VAT summaries. | Tax code tables plus calculation helpers and report queries. |
+| Reporting/data services | Produce owner dashboards, VAT summaries, exports, and later data-heavy analysis. | SQL/reporting queries, materialized views, Pandas/Polars jobs when useful. |
 | Audit log | Record who did what, when, on which company/entity, and what changed. | Append-only audit_events table, request correlation IDs, before/after JSON diffs. |
 | Configuration | Custom fields, templates, numbering, approval rules, roles. | Metadata tables with typed validation and scoped availability. |
+| Future AI services | Finance assistant, categorization, document intelligence, anomaly detection. | Backend-only services with permission checks, audit, evals, and data retention policy. |
 
 ## Recommended Project Structure
 
 ```text
-src/
-├── app/                    # Next.js routes and page shells
-├── components/             # Reusable UI components
-├── features/               # Vertical feature modules
-│   ├── auth/
-│   ├── companies/
-│   ├── contacts/
-│   ├── invoices/
-│   ├── expenses/
-│   ├── payments/
-│   ├── dashboard/
-│   └── settings/
-├── domains/                # Domain logic independent of routes
-│   ├── accounting/
-│   ├── vat/
-│   ├── workflow/
-│   ├── permissions/
-│   └── audit/
-├── db/                     # Prisma client, migrations, seed data
-├── lib/                    # Cross-cutting helpers
-├── tests/                  # Integration and E2E fixtures/utilities
-└── styles/                 # Global CSS and design tokens
+apps/
+├── api/                         # FastAPI backend
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── platform/            # companies, themes, users, roles, permissions
+│   │   ├── finance/             # contacts, invoices, bills, payments
+│   │   ├── accounting/          # chart of accounts, journals, posting rules
+│   │   ├── reporting/           # dashboard, VAT summary, exports
+│   │   ├── workflow/            # approvals and state transitions
+│   │   ├── audit/               # audit event model and readers
+│   │   ├── integrations/        # email, storage, future payments/eInvoicing
+│   │   └── ai/                  # future AI/data features, initially minimal
+│   ├── migrations/              # Alembic migrations
+│   └── tests/
+├── web/                         # React/Vite frontend
+│   ├── src/
+│   │   ├── app/                 # routing/app shell
+│   │   ├── features/            # UI feature modules
+│   │   ├── components/          # reusable UI
+│   │   ├── api/                 # generated API client
+│   │   ├── theme/               # brand/theme tokens
+│   │   └── tests/
+│   └── e2e/
+├── shared/                      # generated schemas, fixtures, docs if needed
+└── docs/                        # engineering docs outside .planning if needed
 ```
 
 ### Structure Rationale
 
-- **features/:** Keep user-facing vertical workflows close together so phases can deliver end-to-end slices.
-- **domains/:** Keep accounting, VAT, permissions, audit, and workflow rules testable without UI coupling.
-- **db/:** Make schema and migrations explicit because finance data shape is a core product asset.
-- **tests/:** Finance scenarios need reusable fixtures: companies, users, roles, invoices, bills, VAT treatments, and ledgers.
+- **apps/api:** Backend owns business rules, accounting integrity, VAT logic, permissions, audit, reporting, and future AI/data services.
+- **apps/web:** Frontend owns operational UX, dense tables, dashboards, forms, and company theme rendering.
+- **OpenAPI contract:** Keeps frontend/backend split productive while reducing contract drift.
+- **Backend modules:** Preserve microservice-ready boundaries without paying microservice costs in Phase 1.
+- **tests:** Finance scenarios need reusable fixtures: companies, themes, users, roles, invoices, bills, VAT treatments, and ledgers.
 
 ## Architectural Patterns
 
-### Pattern 1: Modular Monolith with Domain Boundaries
+### Pattern 1: Monorepo with Split Frontend and Backend
 
-**What:** One deployable app with clear internal modules for platform, finance, accounting, and reporting.
-**When to use:** Best for Phase 1 and multi-developer velocity.
-**Trade-offs:** Faster and easier to reason about than microservices; requires discipline to keep boundaries clean.
+**What:** One repository containing separately deployable frontend and backend applications.
+**When to use:** Best for this project because the team wants frontend/backend separation but shared coordination.
+**Trade-offs:** Clear ownership and Python backend strengths; requires API contract discipline.
 
-### Pattern 2: Event-Driven Posting Within the Monolith
+### Pattern 2: Modular FastAPI Backend
+
+**What:** One backend deployable with internal modules for platform, finance, accounting, reporting, workflow, audit, integrations, and future AI.
+**When to use:** Phase 1 through product validation.
+**Trade-offs:** Avoids distributed-system overhead while preserving boundaries that can become services later.
+
+### Pattern 3: Event-Driven Posting Inside Backend Transactions
 
 **What:** Business actions create domain events and posting instructions; the accounting service writes balanced journal entries.
 **When to use:** Invoices, approvals, payments, supplier bills, and adjustments.
 **Trade-offs:** More upfront modeling, but avoids "report-only accounting" that cannot be trusted.
 
-### Pattern 3: Company-Scoped Everything
+### Pattern 4: Company-Scoped Everything
 
 **What:** Every business record includes company/tenant scope; access is always checked against membership and role.
-**When to use:** All XAI Books data.
+**When to use:** All XAI Books data, files, themes, dashboards, and reports.
 **Trade-offs:** More verbose queries and tests; prevents catastrophic cross-company leakage.
 
-### Pattern 4: Metadata-Driven Configuration, Not Arbitrary Scripting
+### Pattern 5: Metadata-Driven Configuration, Not Arbitrary Scripting
 
 **What:** Custom fields, templates, and workflows are stored as constrained metadata.
 **When to use:** v1 configurability.
@@ -110,15 +128,16 @@ src/
 ### Invoice Flow
 
 ```text
-User creates invoice
-    -> Permission check
+User creates invoice in web app
+    -> FastAPI endpoint
+    -> Tenant + permission dependencies
     -> Validate customer, company VAT settings, line items, custom fields
-    -> Calculate VAT and totals
+    -> Calculate VAT and totals server-side
     -> Save structured invoice draft
     -> Audit event: invoice.created
     -> Approval transition if required
     -> On approval/posting: generate journal entries
-    -> Render PDF from structured invoice
+    -> Render PDF from structured invoice and company theme
     -> Dashboard/VAT/report queries update from canonical data
 ```
 
@@ -126,6 +145,7 @@ User creates invoice
 
 ```text
 User records bill/expense
+    -> FastAPI endpoint
     -> Permission check
     -> Validate supplier, VAT treatment, attachment metadata
     -> Save bill/expense
@@ -135,29 +155,41 @@ User records bill/expense
     -> Audit event with before/after changes
 ```
 
+### Reporting/Data Flow
+
+```text
+Ledger + documents + payments
+    -> SQL report queries / materialized views
+    -> Backend reporting service
+    -> Optional Pandas/Polars job for larger exports/analysis
+    -> API response or generated export
+    -> Frontend dashboard/table
+```
+
 ### State Management
 
 ```text
 Server canonical state in PostgreSQL
-    -> Server-rendered pages and route handlers
-    -> Client cache for dashboard widgets and interactive forms
-    -> Mutations call server actions/API handlers
-    -> Audit and ledger writes happen server-side only
+    -> FastAPI service methods own mutations
+    -> React Query caches API responses in the web app
+    -> TanStack Table renders dense operational grids
+    -> Audit and ledger writes happen backend-side only
 ```
 
 ## Scaling Considerations
 
 | Scale | Architecture Adjustments |
 |-------|--------------------------|
-| 0-1k companies | Modular monolith, managed PostgreSQL, object storage, background jobs for PDFs/emails. |
-| 1k-100k companies | Add read replicas/reporting views, stronger job queues, partition audit/events by company/time, cache dashboards. |
-| 100k+ companies | Split reporting/eInvoicing/background workloads first; keep ledger writes strongly consistent. |
+| 0-1k companies | Monorepo, split frontend/backend deployments, modular FastAPI backend, managed PostgreSQL, object storage, background jobs. |
+| 1k-100k companies | Add read replicas/reporting views, stronger job queues, partition audit/events by company/time, cache dashboards, dedicated report workers. |
+| 100k+ companies | Consider extracting reporting/exports, document generation, AI services, eInvoicing integration, or background processing into services. Keep ledger writes strongly consistent. |
 
 ### Scaling Priorities
 
 1. **First bottleneck:** dashboard/report queries over ledger and audit data. Fix with summary tables/materialized views and company/date indexes.
-2. **Second bottleneck:** PDF generation and future eInvoice exchange. Fix with background jobs and idempotent document status transitions.
-3. **Third bottleneck:** audit event volume. Fix with partitioning, retention policy, and export tooling while preserving required records.
+2. **Second bottleneck:** tabular exports and reporting workloads. Fix with background jobs, Pandas/Polars pipelines, and generated report artifacts.
+3. **Third bottleneck:** PDF generation and future eInvoice exchange. Fix with background jobs and idempotent document status transitions.
+4. **Fourth bottleneck:** audit event volume. Fix with partitioning, retention policy, and export tooling while preserving required records.
 
 ## Anti-Patterns
 
@@ -171,7 +203,7 @@ Server canonical state in PostgreSQL
 
 **What people do:** Hide other companies in navigation but rely on ad hoc filters.
 **Why it's wrong:** One missed filter can leak financial data.
-**Do this instead:** Enforce company scope in database schema, service APIs, authorization checks, and tests.
+**Do this instead:** Enforce company scope in database schema, service APIs, authorization checks, files, reports, themes, and tests.
 
 ### Anti-Pattern 3: Free-Form Custom Fields Everywhere
 
@@ -179,34 +211,47 @@ Server canonical state in PostgreSQL
 **Why it's wrong:** Search, reporting, exports, and validation become unreliable.
 **Do this instead:** Typed custom field definitions with allowed entities, validation rules, and display/reporting metadata.
 
+### Anti-Pattern 4: Microservices Before the Product Boundary Is Known
+
+**What people do:** Split platform, accounting, reporting, and documents into services immediately.
+**Why it's wrong:** Distributed transactions and service contracts make early accounting correctness harder.
+**Do this instead:** Keep separate frontend/backend apps in one monorepo, with a modular FastAPI backend that can be split later.
+
 ## Integration Points
 
 ### External Services
 
 | Service | Integration Pattern | Notes |
 |---------|---------------------|-------|
-| Email provider | Event-triggered notifications | Invoice sent, invitation, approval request, password reset. |
-| Object storage | Store PDFs and attachments | Store metadata in PostgreSQL; access must be company-scoped. |
+| Email provider | Backend event-triggered notifications | Invoice sent, invitation, approval request, password reset. |
+| Object storage | Store PDFs, attachments, and logos | Store metadata in PostgreSQL; access must be company-scoped. |
 | Payment provider | Future integration | Start with manual payment recording; add online payments later. |
 | Bank feeds/import | Future integration | Defer until base ledger/payment flows are stable. |
 | UAE eInvoicing ASP | Future provider boundary | Official framework uses structured data exchange; design invoice data and status logs now. |
+| AI model providers | Future backend-only integration | Require permission checks, audit, evaluation, and data retention controls. |
 
 ### Internal Boundaries
 
 | Boundary | Communication | Notes |
 |----------|---------------|-------|
-| UI -> domain services | Server actions/API handlers | No ledger, audit, or permission writes from the client. |
+| Web -> API | OpenAPI-generated client | No ledger, audit, or permission writes from the client. |
+| API routers -> domain services | Python service calls | Keep HTTP concerns out of accounting logic. |
 | Finance docs -> accounting | Domain events/posting service | Posting rules should be deterministic and tested. |
 | Workflows -> permissions | Policy checks | Approval transitions must verify actor role and company. |
-| Config -> features | Metadata reads | Custom fields/templates should be cached but validated server-side. |
+| Config/themes -> features | Metadata reads | Custom fields/templates/themes should be cached but validated server-side. |
+| Reporting -> accounting | Read models/report queries | Reports must reconcile to ledger/source records. |
 
 ## Sources
 
+- https://fastapi.tiangolo.com/ - FastAPI framework and SQL database guidance.
+- https://github.com/FastAPI/FastAPI - FastAPI release information.
+- https://www.python.org/downloads/ - Python release context.
+- https://www.sqlalchemy.org/ - SQLAlchemy ORM and SQL toolkit.
+- https://alembic.sqlalchemy.org/ - migration tooling.
 - https://mof.gov.ae/en/about-us/initiatives/einvoicing/ - structured invoice definition and eInvoicing model.
 - https://mof.gov.ae/en/public-finance/tax/value-added-tax-vat/ - VAT and record-keeping expectations.
 - https://tax.gov.ae/DataFolder/Files/Guides/CT/Small%20Business%20Relief%20Guide%20-%20EN%20-%2027%2008%202023.pdf - business records, supporting documents, and seven-year retention expectation.
 - https://www.postgresql.org/ - PostgreSQL reliability and supported version information.
-- https://docs.prisma.io/docs/v6/orm/overview/databases/postgresql - Prisma/PostgreSQL connector shape.
 - Product feature comparisons from Wafeq, QuickBooks UAE, Zoho Books UAE, and Xero feature pages.
 
 ---

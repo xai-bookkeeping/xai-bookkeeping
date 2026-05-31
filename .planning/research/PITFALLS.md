@@ -118,6 +118,25 @@ No way to see why a dashboard number changed; accountants need database access t
 **Phase to address:**
 Dashboard/reporting phase and every workflow phase.
 
+---
+
+### Pitfall 7: Starting With Microservices Too Early
+
+**What goes wrong:**
+The team spends Phase 1 solving deployment, distributed transactions, cross-service permissions, schema ownership, and observability instead of proving the finance product.
+
+**Why it happens:**
+Microservices feel like the natural destination for a growing business platform, so the architecture jumps there before the domain boundaries are validated.
+
+**How to avoid:**
+Use a monorepo with a separate frontend and FastAPI backend. Keep backend modules internally separated around platform, finance, accounting, reporting, workflow, audit, and future AI/data services. Extract services only when scale, ownership, or performance pressure makes the boundary obvious.
+
+**Warning signs:**
+Separate services are introduced before the first invoice/bill/ledger flow is production-ready; distributed events appear before the accounting transaction model is stable.
+
+**Phase to address:**
+Foundation and every architecture review.
+
 ## Technical Debt Patterns
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
@@ -127,6 +146,7 @@ Dashboard/reporting phase and every workflow phase.
 | Hard-code one company per user | Simpler auth | Blocks multi-company support | Never for this project |
 | Build generic JSON fields without metadata | Quick custom fields | Poor validation/search/reporting | Only for internal prototypes |
 | Dashboard from raw operational rows only | Quick charts | Slow or inconsistent reports | Acceptable briefly if backed by tests and replaced with summary views |
+| Split into microservices before domain boundaries are stable | Feels scalable | Distributed complexity, harder accounting consistency | Not acceptable for Phase 1 |
 
 ## Integration Gotchas
 
@@ -186,6 +206,7 @@ Dashboard/reporting phase and every workflow phase.
 | Duplicated VAT logic | MEDIUM | Centralize VAT engine, backfill line-level tax data, add report/invoice consistency tests. |
 | PDF-only invoices | MEDIUM/HIGH | Extract structured fields, rebuild invoice model, regenerate PDFs from canonical data. |
 | Overbuilt workflow engine | MEDIUM | Constrain supported states/actions, migrate unsupported configs, simplify UI. |
+| Premature microservices | HIGH | Collapse early services back behind clear module boundaries, stabilize domain transactions, re-extract only proven boundaries. |
 
 ## Pitfall-to-Phase Mapping
 
@@ -197,6 +218,7 @@ Dashboard/reporting phase and every workflow phase.
 | PDF vs eInvoice confusion | Invoice workflow | Structured invoice data exists before PDF generation |
 | Overbuilt configurability | Configuration foundation | Only approved typed field/workflow primitives are available |
 | Owner UX hides too much | Dashboard/reporting | Every dashboard metric drills into source records |
+| Premature microservices | Foundation | Frontend/backend are split, but backend starts as modular FastAPI app with clear internal boundaries |
 
 ## Sources
 

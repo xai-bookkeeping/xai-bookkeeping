@@ -31,6 +31,7 @@ Features users assume exist. Missing these = product feels incomplete.
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
 | UAE-first defaults | Product feels native rather than adapted from a generic global system. | MEDIUM | AED, TRN, 5% VAT, UAE document expectations, VAT summary, bilingual-ready labels. |
+| Multi-company theming | Each company can present its own brand in the app, invoices, PDFs, and reports. | MEDIUM | Medium priority: important for professionalism and multi-company use, but should not block core finance workflows. |
 | Owner-first UX over accounting backbone | Lets non-accountants run daily finance while accountants still trust the books. | HIGH | Requires careful language, guided workflows, and hidden-but-correct ledger behavior. |
 | Configurable fields and templates | SMEs can adapt the system to their workflow without custom development. | MEDIUM | Use typed custom fields with validation and scoped availability. |
 | Admin-level roles, permissions, workflow rules | Supports growth from owner-only to team operation. | HIGH | Keep v1 permission model understandable and testable. |
@@ -86,6 +87,7 @@ Minimum viable product needed to validate XAI Books as an owner-first UAE financ
 - [ ] Secure login, users, roles, and company membership.
 - [ ] Multi-company data isolation.
 - [ ] Company settings with AED, TRN, VAT registration flag, and 5% UAE VAT default.
+- [ ] Company theme settings for logo and basic brand presentation.
 - [ ] Customer and supplier records.
 - [ ] Sales invoices with line items, VAT calculation, status, approval, PDF output, and payment tracking.
 - [ ] Expenses and supplier bills with VAT treatment, status, attachments, and payment tracking.
@@ -117,6 +119,7 @@ Minimum viable product needed to validate XAI Books as an owner-first UAE financ
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
 | Multi-company + user access | HIGH | HIGH | P1 |
+| Multi-company theming | MEDIUM | MEDIUM | P2 |
 | Customers and suppliers | HIGH | LOW | P1 |
 | Invoices + VAT + PDF | HIGH | HIGH | P1 |
 | Payments tracking | HIGH | MEDIUM | P1 |

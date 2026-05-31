@@ -20,6 +20,7 @@ SME owners in the UAE can run daily finance confidently in one simple, trustwort
 
 - [ ] Secure login and user management.
 - [ ] Multi-company support where each company's data is fully private.
+- [ ] Multi-company theming so each company can have its own logo, brand colors, and invoice/report presentation where appropriate.
 - [ ] Customer and supplier management.
 - [ ] Invoice creation with automatic UAE VAT calculation at 5%.
 - [ ] Payment recording and payment tracking.
@@ -65,6 +66,9 @@ Phase 1 should prove that an SME owner can run the full daily finance loop in XA
 - **Compliance Readiness**: VAT-aware invoices, VAT summary reporting, audit logs, and document evidence must be designed from the start.
 - **Internationalization**: Phase 1 launches in English but must not block future Arabic and RTL support.
 - **Platform Direction**: XAI Books should be built as the first module of a configurable modular platform, not as an isolated one-off app.
+- **Repository Shape**: Keep frontend and backend in one monorepo while deploying them as separate applications.
+- **Backend Architecture**: Use a FastAPI-based backend rather than a full-stack frontend framework backend, so tabular data, reporting, AI integration, and future data-heavy features have a strong Python foundation.
+- **Evolution Path**: Do not start with microservices, but preserve internal boundaries that could become services later if scale or team structure demands it.
 
 ## Key Decisions
 
@@ -76,6 +80,9 @@ Phase 1 should prove that an SME owner can run the full daily finance loop in XA
 | Treat UAE-first behavior as core scope | VAT at 5%, TRN fields, AED, and UAE business expectations are differentiators, not add-ons | - Pending |
 | Make the UI bilingual-ready but launch in English | Arabic/RTL support is important, but full bilingual UI is not required for Phase 1 | - Pending |
 | Build configurable fields and admin/platform controls into the foundation | XAI is intended as a modular business platform that adapts to business workflows over time | - Pending |
+| Keep frontend and backend split inside a monorepo | The team wants separate frontend/backend ownership while preserving shared repo coordination | - Pending |
+| Use FastAPI for the backend | Python is a better fit for tabular data, reporting, future AI integration, and later data-heavy features | - Pending |
+| Defer microservices until later | Service boundaries may be useful as XAI grows, but Phase 1 should avoid distributed-system overhead | - Pending |
 
 ## Evolution
 
