@@ -72,6 +72,7 @@ Use this order after changing the stack wiring:
 ## Layout
 
 - `backend/` holds the FastAPI application and backend tooling.
+- `backend/app/README.md` documents the backend modular-monolith contract and boundary map.
 - `frontend/` holds the React/Vite application shell and generated client code.
 - `docker-compose.yml` orchestrates PostgreSQL, backend, and frontend together from the repository root.
 - `Makefile` provides the shared developer commands used throughout the phase.
