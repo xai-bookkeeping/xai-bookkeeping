@@ -59,6 +59,7 @@ services:
       - "${WEB_PORT:-5173}:${WEB_CONTAINER_PORT:-5173}"
     volumes:
       - ./frontend:/app/frontend
+      - frontend_node_modules:/app/frontend/node_modules
     working_dir: /app/frontend
     depends_on:
       backend:
@@ -73,3 +74,4 @@ services:
 
 volumes:
   postgres_data:
+  frontend_node_modules:
