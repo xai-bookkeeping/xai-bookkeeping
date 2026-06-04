@@ -35,7 +35,7 @@ services:
       - "${API_PORT:-8000}:${API_CONTAINER_PORT:-8000}"
     volumes:
       - ./backend:/app/backend
-    working_dir: /app
+    working_dir: /app/backend
     depends_on:
       postgres:
         condition: service_healthy

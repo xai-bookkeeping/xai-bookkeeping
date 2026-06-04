@@ -2,7 +2,8 @@ FROM python:3.14-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    DATABASE_URL=sqlite+pysqlite:///./xai_books.db
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential gcc libpq-dev \
@@ -10,13 +11,13 @@ RUN apt-get update \
 
 WORKDIR /app/backend
 
-COPY pyproject.toml ./
+COPY pyproject.toml alembic.ini ./
 COPY app ./app
+COPY migrations ./migrations
+COPY tests ./tests
 
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -e ".[dev]"
-
-RUN ln -s /app/backend/alembic.ini /app/alembic.ini
 
 EXPOSE 8000
 

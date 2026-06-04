@@ -38,6 +38,7 @@ make migrate-backend
 make test-backend
 make test-frontend
 make verify-stack
+make verify-images
 ```
 
 Run `make gen-types` any time backend request/response schemas change. The command exports the FastAPI OpenAPI document from the backend container and regenerates the committed TypeScript client under `frontend/src/api/`.
@@ -68,6 +69,8 @@ Use this order after changing the stack wiring:
 3. Confirm the backend health URL returns a healthy response and the workspace shell route loads in the browser.
 
 4. Re-run `make gen-types` after backend contract changes once the OpenAPI client pipeline is in place.
+
+5. Re-run `make verify-images` when you need to confirm the standalone backend and frontend images still work without source bind mounts.
 
 ## Layout
 

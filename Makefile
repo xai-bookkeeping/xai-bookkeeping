@@ -1,7 +1,7 @@
 SHELL := /bin/sh
 COMPOSE ?= docker compose
 
-.PHONY: dev down logs gen-types migrate-backend test-backend test-frontend verify-stack config build
+.PHONY: dev down logs gen-types migrate-backend test-backend test-frontend verify-stack verify-images config build
 
 OPENAPI_SPEC_DIR ?= /tmp/xai-books-openapi
 
@@ -36,3 +36,7 @@ build:
 
 verify-stack:
 	$(COMPOSE) config >/dev/null && $(COMPOSE) build backend frontend
+
+verify-images: build
+	docker run --rm --entrypoint npm xai-bookkeeping-frontend run build
+	docker run --rm --entrypoint sh xai-bookkeeping-backend -lc 'alembic upgrade head'
