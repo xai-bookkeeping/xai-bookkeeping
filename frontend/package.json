@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "gen-types": "openapi-ts --input /spec/openapi.json --output src/api",
     "preview": "vite preview --host 0.0.0.0 --port ${WEB_CONTAINER_PORT:-5173}",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"

@@ -40,6 +40,8 @@ make test-frontend
 make verify-stack
 ```
 
+Run `make gen-types` any time backend request/response schemas change. The command exports the FastAPI OpenAPI document from the backend container and regenerates the committed TypeScript client under `frontend/src/api/`.
+
 ## Verification Sequence
 
 Use this order after changing the stack wiring:
