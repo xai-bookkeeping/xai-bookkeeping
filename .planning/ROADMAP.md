@@ -47,7 +47,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-03: React/Vite frontend shell and API client contract
+- [x] 01-03: React/Vite frontend shell and API client contract
 - [ ] 01-04: Backend module boundaries and future AI/data extension points
 
 ### Phase 2: Company Access and Tenant Foundation
@@ -174,7 +174,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Monorepo and API/Web Foundations | 2/4 | In Progress|  |
+| 1. Monorepo and API/Web Foundations | 3/4 | In Progress|  |
 | 2. Company Access and Tenant Foundation | 0/4 | Not started | - |
 | 3. Sales-to-Cash MVP | 0/5 | Not started | - |
 | 4. Spend, Payables, and Accounting Core | 0/5 | Not started | - |

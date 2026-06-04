@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-06-04T09:55:55.145Z"
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-06-04T10:28:20.091Z"
 last_activity: 2026-05-31 - Initial roadmap created and ready for Phase 1 planning
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-31)
 ## Current Position
 
 Phase: 1 of 6 (Monorepo and API/Web Foundations)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: Ready to execute
 Last activity: 2026-05-31 - Initial roadmap created and ready for Phase 1 planning
 
@@ -54,6 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 *Updated after each plan completion*
 | Phase 01 P01 | 8min | 3 tasks | 7 files |
 | Phase 01 P02 | 31m | 3 tasks | 26 files |
+| Phase 01-monorepo-and-api-web-foundations P03 | 30m | 3 tasks | 50 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,10 @@ Recent decisions affecting current work:
 - [Phase 01]: Keep backend settings injectable so the same configuration object drives health checks, DB sessions, and tests.
 - [Phase 01]: Use a small workspace probe table as the first persisted API flow instead of introducing finance tables early.
 - [Phase 01]: Document backend migrations as a root Makefile command so the Compose entrypoint stays repeatable.
+- [Phase 01]: Selected @hey-api/openapi-ts because it emits both client helpers and schema types for the Vite/React app without inventing a custom contract layer.
+- [Phase 01]: Kept the generated contract committed under frontend/src/api/ so the browser consumes backend-owned schemas without duplicating finance logic.
+- [Phase 01]: Used TanStack Query for health/probe fetches and mutation invalidation so the route stays declarative and cache-aware.
+- [Phase 01]: Kept the API base URL configurable via VITE_API_URL with a localhost fallback for Docker and local browser runs.
 
 ### Pending Todos
 
@@ -95,6 +100,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-04T09:55:55.142Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-06-04T10:28:20.088Z
+Stopped at: Completed 01-03-PLAN.md
 Resume file: None
