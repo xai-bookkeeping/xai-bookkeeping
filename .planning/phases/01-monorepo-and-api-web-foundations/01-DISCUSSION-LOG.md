@@ -3,9 +3,9 @@
 > **Audit trail only.** Do not use as input to planning, research, or execution agents.
 > Decisions are captured in CONTEXT.md — this log preserves the alternatives considered.
 
-**Date:** 2026-06-02
+**Date:** 2026-06-04
 **Phase:** 1-Monorepo and API/Web Foundations
-**Areas discussed:** Monorepo structure, API contract mechanism, Frontend UI foundation, Local dev setup
+**Areas discussed:** Monorepo structure, API contract mechanism, Frontend UI foundation, Local dev setup, Frontend component architecture
 
 ---
 
@@ -184,6 +184,35 @@
 | Hardcoded dev defaults, no `.env` | Simplest; bad production habits | |
 
 **User's choice:** `.env` at root, loaded by Docker Compose
+
+---
+
+## Frontend Component Architecture
+
+### Q1: How strict should the component taxonomy be?
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| `atoms/`, `molecules/`, `organisms/`, `templates/` under `frontend/src/components` | Explicit atomic design taxonomy enforced in the filesystem | ✓ |
+| Single `components/` tree without atomic folder names | Reusable UI grouped loosely without strict taxonomy | |
+| Hybrid structure | Atomic primitives plus an extra composites layer | |
+| Something else | Different structure in mind | |
+
+**User's choice:** `atoms/`, `molecules/`, `organisms/`, `templates/` under `frontend/src/components`
+
+---
+
+### Q2: Where should page-level composition live?
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| `frontend/src/routes/` owns page/screen composition; `components/` stays atomic-only | Keeps routes responsible for screen assembly and preserves a clean shared component tree | ✓ |
+| `frontend/src/pages/` owns page/screen composition | Separate page layer outside routes | |
+| `frontend/src/features/` owns screen composition by domain | Domain folders compose screens while components stay shared | |
+| Something else | Different structure in mind | |
+
+**User's choice:** `frontend/src/routes/` owns page/screen composition
+**Notes:** User wants this enforced absolutely strictly. No top-level per-page or per-component silos should exist under `frontend/src/components/`.
 
 ---
 

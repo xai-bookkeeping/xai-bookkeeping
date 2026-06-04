@@ -1,6 +1,6 @@
 # Phase 1: Monorepo and API/Web Foundations - Context
 
-**Gathered:** 2026-06-02
+**Gathered:** 2026-06-04
 **Status:** Ready for planning
 
 <domain>
@@ -29,6 +29,10 @@ Establish the structural foundation: monorepo directory layout, FastAPI backend 
 - **D-09:** Component library: **shadcn/ui** (components copied into `frontend/src/components/ui/`). Styling: **Tailwind CSS**.
 - **D-10:** Routing: **React Router v6**. Nested routes used for app shell + per-section layouts.
 - **D-11:** Server state (API data fetching + caching): **TanStack Query (React Query)**.
+
+### Frontend Component Architecture
+- **D-15:** Frontend shared UI must follow atomic component design strictly. Shared UI lives under `frontend/src/components/` only, with explicit `atoms/`, `molecules/`, `organisms/`, and `templates/` directories.
+- **D-16:** Page and screen composition lives in `frontend/src/routes/`. Do not create top-level per-page, per-route, or per-feature component silos under `frontend/src/components/`.
 
 ### Local Development Setup
 - **D-12:** Everything runs in Docker Compose: PostgreSQL, FastAPI backend, and Vite frontend — all as containers. Full isolation, consistent across machines.
@@ -77,6 +81,7 @@ No ADRs, design docs, or external specs exist yet — this is Phase 1 of a green
 ## Specific Ideas
 
 - The frontend shell only needs to demonstrate the React Router + TanStack Query + shadcn/ui + Tailwind stack wired up — no real screens yet. A placeholder authenticated shell is sufficient.
+- The frontend filesystem should enforce the atomic split early so future phases do not drift into page-specific component trees inside `frontend/src/components/`.
 - The backend only needs the FastAPI app bootstrapped, PostgreSQL connected, Alembic migrations running, and one health/ping endpoint — no domain models yet.
 - The codegen pipeline (`make gen-types`) needs to work end-to-end: backend serves OpenAPI spec → codegen tool produces TS client at `frontend/src/api/` → frontend can import types.
 
@@ -92,4 +97,4 @@ None — discussion stayed within phase scope.
 ---
 
 *Phase: 1-Monorepo and API/Web Foundations*
-*Context gathered: 2026-06-02*
+*Context gathered: 2026-06-04*
