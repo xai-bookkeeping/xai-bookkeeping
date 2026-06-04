@@ -10,6 +10,14 @@ RUN apt-get update \
 
 WORKDIR /app/backend
 
+COPY pyproject.toml ./
+COPY app ./app
+
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -e ".[dev]"
+
+RUN ln -s /app/backend/alembic.ini /app/alembic.ini
+
 EXPOSE 8000
 
 CMD ["sh", "-lc", "uvicorn app.main:app --host 0.0.0.0 --port ${API_CONTAINER_PORT:-8000} --reload"]

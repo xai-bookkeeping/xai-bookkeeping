@@ -10,7 +10,7 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:${POSTGRES_CONTAINER_PORT:-5432}"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test:
         - CMD-SHELL
@@ -35,7 +35,7 @@ services:
       - "${API_PORT:-8000}:${API_CONTAINER_PORT:-8000}"
     volumes:
       - ./backend:/app/backend
-    working_dir: /app/backend
+    working_dir: /app
     depends_on:
       postgres:
         condition: service_healthy
