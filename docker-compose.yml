@@ -35,10 +35,10 @@ services:
       - "${API_PORT:-8000}:${API_CONTAINER_PORT:-8000}"
     volumes:
       - ./backend:/app/backend
+    working_dir: /app/backend
     depends_on:
       postgres:
         condition: service_healthy
-    command: uvicorn app.main:app --host 0.0.0.0 --port ${API_CONTAINER_PORT:-8000} --reload
     healthcheck:
       test: >
         python -c "from urllib.request import urlopen; urlopen('http://127.0.0.1:${API_CONTAINER_PORT:-8000}/health')"
@@ -59,10 +59,10 @@ services:
       - "${WEB_PORT:-5173}:${WEB_CONTAINER_PORT:-5173}"
     volumes:
       - ./frontend:/app/frontend
+    working_dir: /app/frontend
     depends_on:
       backend:
         condition: service_started
-    command: npm run dev -- --host 0.0.0.0 --port ${WEB_CONTAINER_PORT:-5173}
     healthcheck:
       test: >
         node -e "fetch('http://127.0.0.1:${WEB_CONTAINER_PORT:-5173}').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"

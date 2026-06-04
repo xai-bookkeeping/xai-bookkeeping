@@ -21,6 +21,12 @@ XAI Books is the first XAI module for UAE SMEs. Phase 1 establishes the root mon
    - Backend health: `http://localhost:8000/health`
    - Workspace shell route: `http://localhost:5173/workspace`
 
+If you change backend or frontend dependencies, rebuild the images before starting the stack again:
+
+```bash
+docker compose build backend frontend
+```
+
 ## Common Commands
 
 ```bash
