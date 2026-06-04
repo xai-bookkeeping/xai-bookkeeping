@@ -13,7 +13,7 @@ XAI Books v1 builds a UAE-first accounting and finance product in vertical MVP s
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Monorepo and API/Web Foundations** - Establish split frontend/backend architecture, FastAPI API, React web app, PostgreSQL, migrations, typed contracts, and modular boundaries.
+- [x] **Phase 1: Monorepo and API/Web Foundations** - Establish split frontend/backend architecture, FastAPI API, React web app, PostgreSQL, migrations, typed contracts, and modular boundaries. (completed 2026-06-04)
 - [ ] **Phase 2: Company Access and Tenant Foundation** - Deliver secure access, users, roles, multi-company isolation, UAE company settings, and base audit events.
 - [ ] **Phase 3: Sales-to-Cash MVP** - Deliver customers, invoices, UAE VAT calculation, approvals, PDF invoices, payments, receivables, and record audit history.
 - [ ] **Phase 4: Spend, Payables, and Accounting Core** - Deliver suppliers, expenses, supplier bills, attachments, payables, chart of accounts, and double-entry postings.
@@ -48,7 +48,7 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 01-03: React/Vite frontend shell and API client contract
-- [ ] 01-04: Backend module boundaries and future AI/data extension points
+- [x] 01-04: Backend module boundaries and future AI/data extension points
 
 ### Phase 2: Company Access and Tenant Foundation
 
@@ -174,7 +174,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Monorepo and API/Web Foundations | 3/4 | In Progress|  |
+| 1. Monorepo and API/Web Foundations | 4/4 | Complete   | 2026-06-04 |
 | 2. Company Access and Tenant Foundation | 0/4 | Not started | - |
 | 3. Sales-to-Cash MVP | 0/5 | Not started | - |
 | 4. Spend, Payables, and Accounting Core | 0/5 | Not started | - |
