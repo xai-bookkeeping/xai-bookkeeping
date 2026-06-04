@@ -1,7 +1,7 @@
 SHELL := /bin/sh
 COMPOSE ?= docker compose
 
-.PHONY: dev down logs gen-types test-backend test-frontend verify-stack config build
+.PHONY: dev down logs gen-types migrate-backend test-backend test-frontend verify-stack config build
 
 dev:
 	$(COMPOSE) up --build
@@ -14,6 +14,9 @@ logs:
 
 gen-types:
 	@printf '%s\n' 'Phase 1 Plan 3 will replace this placeholder with OpenAPI client generation.'
+
+migrate-backend:
+	$(COMPOSE) run --rm backend alembic upgrade head
 
 test-backend:
 	$(COMPOSE) run --rm backend pytest -q

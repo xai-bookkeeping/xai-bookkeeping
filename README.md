@@ -34,6 +34,7 @@ make dev
 make down
 make logs
 make gen-types
+make migrate-backend
 make test-backend
 make test-frontend
 make verify-stack
