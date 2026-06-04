@@ -17,10 +17,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Backend Foundation
 
-- [ ] **BACK-01**: Backend API is implemented with FastAPI.
-- [ ] **BACK-02**: Backend persistence uses PostgreSQL.
-- [ ] **BACK-03**: Backend database access and migrations use SQLAlchemy and Alembic or an equivalent reviewed migration workflow.
-- [ ] **BACK-04**: Backend validation uses typed request and response schemas.
+- [x] **BACK-01**: Backend API is implemented with FastAPI.
+- [x] **BACK-02**: Backend persistence uses PostgreSQL.
+- [x] **BACK-03**: Backend database access and migrations use SQLAlchemy and Alembic or an equivalent reviewed migration workflow.
+- [x] **BACK-04**: Backend validation uses typed request and response schemas.
 - [ ] **BACK-05**: Backend services support tabular reporting/export workflows without placing finance logic in the frontend.
 - [ ] **BACK-06**: Backend design leaves a clear path for later AI/data-heavy features without making AI part of the Phase 1 core.
 
@@ -177,10 +177,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ARCH-03 | Phase 1 | Pending |
 | ARCH-04 | Phase 1 | Pending |
 | ARCH-05 | Phase 1 | Pending |
-| BACK-01 | Phase 1 | Pending |
-| BACK-02 | Phase 1 | Pending |
-| BACK-03 | Phase 1 | Pending |
-| BACK-04 | Phase 1 | Pending |
+| BACK-01 | Phase 1 | Complete |
+| BACK-02 | Phase 1 | Complete |
+| BACK-03 | Phase 1 | Complete |
+| BACK-04 | Phase 1 | Complete |
 | BACK-05 | Phase 5 | Pending |
 | BACK-06 | Phase 1 | Pending |
 | FRNT-01 | Phase 1 | Pending |

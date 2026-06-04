@@ -43,7 +43,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 01-02: FastAPI backend skeleton, PostgreSQL, migrations, and validation schema base
+- [x] 01-02: FastAPI backend skeleton, PostgreSQL, migrations, and validation schema base
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -174,7 +174,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Monorepo and API/Web Foundations | 1/4 | In Progress|  |
+| 1. Monorepo and API/Web Foundations | 2/4 | In Progress|  |
 | 2. Company Access and Tenant Foundation | 0/4 | Not started | - |
 | 3. Sales-to-Cash MVP | 0/5 | Not started | - |
 | 4. Spend, Payables, and Accounting Core | 0/5 | Not started | - |
