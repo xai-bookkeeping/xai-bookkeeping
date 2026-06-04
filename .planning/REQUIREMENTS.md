@@ -9,8 +9,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Monorepo Architecture
 
-- [ ] **ARCH-01**: The project is organized as a monorepo containing separate frontend and backend applications.
-- [ ] **ARCH-02**: The frontend and backend can be developed, tested, and deployed as separate applications from the monorepo.
+- [x] **ARCH-01**: The project is organized as a monorepo containing separate frontend and backend applications.
+- [x] **ARCH-02**: The frontend and backend can be developed, tested, and deployed as separate applications from the monorepo.
 - [ ] **ARCH-03**: The backend exposes stable API contracts that the frontend can consume without duplicating backend business rules.
 - [ ] **ARCH-04**: Backend modules are organized around clear boundaries for platform, finance, accounting, reporting, workflow, audit, integrations, and future AI/data services.
 - [ ] **ARCH-05**: The architecture avoids Phase 1 microservices while preserving boundaries that can be extracted later if scale or ownership requires it.
@@ -172,8 +172,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ARCH-01 | Phase 1 | Pending |
-| ARCH-02 | Phase 1 | Pending |
+| ARCH-01 | Phase 1 | Complete |
+| ARCH-02 | Phase 1 | Complete |
 | ARCH-03 | Phase 1 | Pending |
 | ARCH-04 | Phase 1 | Pending |
 | ARCH-05 | Phase 1 | Pending |
@@ -251,6 +251,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONF-06 | Phase 6 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 77 total
 - Mapped to phases: 77
 - Unmapped: 0
