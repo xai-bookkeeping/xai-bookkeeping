@@ -1,7 +1,7 @@
 SHELL := /bin/sh
 COMPOSE ?= docker compose
 
-.PHONY: dev down logs gen-types test-backend test-frontend config build
+.PHONY: dev down logs gen-types test-backend test-frontend verify-stack config build
 
 dev:
 	$(COMPOSE) up --build
@@ -26,3 +26,6 @@ config:
 
 build:
 	$(COMPOSE) build backend frontend
+
+verify-stack:
+	$(COMPOSE) config >/dev/null && $(COMPOSE) build backend frontend

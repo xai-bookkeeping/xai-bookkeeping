@@ -36,6 +36,7 @@ make logs
 make gen-types
 make test-backend
 make test-frontend
+make verify-stack
 ```
 
 ## Verification Sequence
@@ -45,24 +46,25 @@ Use this order after changing the stack wiring:
 1. Validate the Compose file:
 
    ```bash
-   docker compose config
+   make verify-stack
    ```
 
-2. Build the backend and frontend images:
+   This wraps the Wave 0 Compose checks:
 
    ```bash
+   docker compose config
    docker compose build backend frontend
    ```
 
-3. Start the stack:
+2. Start the stack:
 
    ```bash
    make dev
    ```
 
-4. Confirm the backend health URL returns a healthy response and the workspace shell route loads in the browser.
+3. Confirm the backend health URL returns a healthy response and the workspace shell route loads in the browser.
 
-5. Re-run `make gen-types` after backend contract changes once the OpenAPI client pipeline is in place.
+4. Re-run `make gen-types` after backend contract changes once the OpenAPI client pipeline is in place.
 
 ## Layout
 
