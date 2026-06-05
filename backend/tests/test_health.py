@@ -44,3 +44,23 @@ def test_health_endpoint_returns_typed_metadata() -> None:
             "database": "xai_books",
         },
     }
+
+
+def test_health_endpoint_allows_local_frontend_origin() -> None:
+    app = create_app(
+        Settings(
+            app_name="XAI Books API",
+            app_version="0.1.0",
+            environment="test",
+            database_url="postgresql+psycopg://xai_books:change-me@postgres:5432/xai_books",
+        )
+    )
+
+    with TestClient(app) as client:
+        response = client.get(
+            "/health",
+            headers={"Origin": "http://localhost:5173"},
+        )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"

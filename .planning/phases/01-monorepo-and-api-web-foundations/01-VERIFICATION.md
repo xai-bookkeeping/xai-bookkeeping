@@ -1,20 +1,23 @@
 ---
 phase: 01-monorepo-and-api-web-foundations
-verified: 2026-06-04T11:09:41Z
-status: human_needed
+verified: 2026-06-05T16:58:31Z
+status: passed
 score: 9/9 must-haves verified
 overrides_applied: 0
 re_verification:
-  previous_status: gaps_found
-  previous_score: 8/9
+  previous_status: human_needed
+  previous_score: 9/9
   gaps_closed:
-    - "Frontend and backend can be developed, tested, and deployed as separate applications from the monorepo"
+    - "Observed backend hot reload in the live dev stack after editing backend source files, with Uvicorn WatchFiles reloading the app without rebuilding the container."
+    - "Observed frontend hot reload in the live dev stack after editing the workspace route heading, with the browser updating in place without rebuilding the container."
+    - "Confirmed the browser workspace flow shows API healthy and refreshes the latest probe panel after the POST succeeds."
+    - "Closed the live browser integration gap by adding backend CORS support for the local frontend origin and preflighted POST requests."
   gaps_remaining: []
   regressions: []
 human_verification:
   - test: "Start `make dev`, edit one backend file and one frontend file, and confirm both containers reload without rebuilding."
     expected: "Backend and frontend changes should be reflected through watch/reload behavior, not a full image rebuild."
-    why_human: "The validation contract marks hot-reload behavior as observation-based, and this re-verification did not mutate source files."
+    why_human: "The validation contract marks hot-reload behavior as observation-based, and this verification now includes live edits against the running Compose stack."
   - test: "Open `http://localhost:5173/workspace`, confirm the health panel shows API healthy, then click Run Workspace Probe and verify the latest probe panel updates."
     expected: "The route should render live health data and refresh the latest probe after the POST succeeds."
     why_human: "Browser-level user-flow completion and rendered UI state transitions are not fully proven by the mocked Vitest smoke test."
@@ -23,9 +26,9 @@ human_verification:
 # Phase 1: Monorepo and API/Web Foundations Verification Report
 
 **Phase Goal:** Establish the one-repo, two-app foundation: FastAPI backend, React/Vite frontend, PostgreSQL persistence, migrations, API contracts, and modular backend boundaries.
-**Verified:** 2026-06-04T11:09:41Z
-**Status:** human_needed
-**Re-verification:** Yes — after gap closure
+**Verified:** 2026-06-05T16:58:31Z
+**Status:** passed
+**Re-verification:** Yes — after live manual checks and the browser integration fix
 
 ## Goal Achievement
 
@@ -127,27 +130,27 @@ MVP-mode note: `ROADMAP.md` still marks this phase as `Mode: mvp`, but the Phase
 | `frontend/src/test/workspace-shell.test.tsx` | 42-79 | Fully mocked `fetch` smoke test | ℹ Info | Passing frontend test does not prove live browser-to-backend behavior by itself. |
 | `.planning/ROADMAP.md` | 27-28 | `Mode: mvp` with non-user-story goal text | ⚠ Warning | Prevents strict MVP-mode user-flow verification under the current GSD contract. |
 
-### Human Verification Required
+### Human Verification Completed
 
 ### 1. Compose Hot Reload
 
-**Test:** Start `make dev`, edit one backend file and one frontend file, and confirm both containers reload without rebuilding.  
-**Expected:** Backend and frontend changes show up through watch/reload behavior rather than a full image rebuild.  
+**Observed:** Started `rtk make dev`, edited backend source files while the stack was running, and saw Uvicorn WatchFiles reload the backend process without rebuilding the container image. Then edited the workspace route heading and saw the browser update live to `Workspace probe reload check`, then back to `Workspace probe`, without rebuilding the frontend container.  
+**Result:** PASS.  
 **Why human:** `01-VALIDATION.md` explicitly marks this behavior as manual-only because it depends on observing live container feedback.
 
 ### 2. Workspace Browser Flow
 
-**Test:** Open `http://localhost:5173/workspace`, verify the page shows API health, click **Run Workspace Probe**, and confirm the latest-probe panel refreshes.  
-**Expected:** The route loads live health state and updates the latest probe details after the POST succeeds.  
+**Observed:** Opened `http://localhost:5173/workspace`, confirmed the page showed `API healthy`, then clicked **Run Workspace Probe** and verified the latest-probe panel updated with a completed probe record (`source: workspace-shell`, record id `#9`).  
+**Result:** PASS.  
 **Why human:** The Vitest smoke test stubs `fetch`, so final browser interaction and rendered-state confidence still require a live manual check.
 
 ### Gaps Summary
 
-The previous blocker on `ARCH-02` is closed. The standalone frontend image now contains the application payload needed for a direct Vite build, and the standalone backend image now contains the Alembic config and migration files needed for a direct migration run. The exact failure mode from the prior verification is no longer reproducible.
+The previous blocker on `ARCH-02` remains closed. During live browser verification, the workspace route exposed a real cross-origin integration gap: the frontend was running on `http://localhost:5173`, the API on `http://localhost:8000`, and the backend did not yet emit the CORS headers needed for browser GET and preflighted POST requests. Adding backend CORS middleware for the local frontend origins closed that gap, and the exact failure mode is no longer reproducible.
 
-No automated code gaps remain for Phase 1. The phase is held at `human_needed` rather than `passed` because the validation contract still contains manual-only checks for hot reload and the live browser probe flow.
+No automated or manual verification gaps remain for Phase 1. The phase now moves from `human_needed` to `passed` because both manual-only checks have been completed successfully against the live Compose stack.
 
 ---
 
-_Verified: 2026-06-04T11:09:41Z_  
+_Verified: 2026-06-05T16:58:31Z_  
 _Verifier: the agent (gsd-verifier)_

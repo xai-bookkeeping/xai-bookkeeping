@@ -71,3 +71,21 @@ def test_workspace_probe_write_then_read_round_trip() -> None:
 
     assert latest.status_code == 200
     assert latest.json() == created_payload
+
+
+def test_workspace_probe_allows_local_frontend_preflight() -> None:
+    app = build_test_app()
+
+    with TestClient(app) as client:
+        response = client.options(
+            "/workspace-probe",
+            headers={
+                "Origin": "http://localhost:5173",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type",
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert "POST" in response.headers["access-control-allow-methods"]
