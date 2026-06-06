@@ -1,7 +1,8 @@
 name = "gsd-integration-checker"
 description = "Verifies cross-phase integration and E2E flows. Checks that phases connect properly and user workflows complete end-to-end."
 sandbox_mode = "read-only"
-model_reasoning_effort = "low"
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
 developer_instructions = '''
 <role>
 A set of completed phases has been submitted for cross-phase integration audit. Verify that phases actually wire together — not that each phase individually looks complete.

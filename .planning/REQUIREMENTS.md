@@ -9,27 +9,27 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Monorepo Architecture
 
-- [ ] **ARCH-01**: The project is organized as a monorepo containing separate frontend and backend applications.
-- [ ] **ARCH-02**: The frontend and backend can be developed, tested, and deployed as separate applications from the monorepo.
-- [ ] **ARCH-03**: The backend exposes stable API contracts that the frontend can consume without duplicating backend business rules.
-- [ ] **ARCH-04**: Backend modules are organized around clear boundaries for platform, finance, accounting, reporting, workflow, audit, integrations, and future AI/data services.
-- [ ] **ARCH-05**: The architecture avoids Phase 1 microservices while preserving boundaries that can be extracted later if scale or ownership requires it.
+- [x] **ARCH-01**: The project is organized as a monorepo containing separate frontend and backend applications.
+- [x] **ARCH-02**: The frontend and backend can be developed, tested, and deployed as separate applications from the monorepo.
+- [x] **ARCH-03**: The backend exposes stable API contracts that the frontend can consume without duplicating backend business rules.
+- [x] **ARCH-04**: Backend modules are organized around clear boundaries for platform, finance, accounting, reporting, workflow, audit, integrations, and future AI/data services.
+- [x] **ARCH-05**: The architecture avoids Phase 1 microservices while preserving boundaries that can be extracted later if scale or ownership requires it.
 
 ### Backend Foundation
 
-- [ ] **BACK-01**: Backend API is implemented with FastAPI.
-- [ ] **BACK-02**: Backend persistence uses PostgreSQL.
-- [ ] **BACK-03**: Backend database access and migrations use SQLAlchemy and Alembic or an equivalent reviewed migration workflow.
-- [ ] **BACK-04**: Backend validation uses typed request and response schemas.
+- [x] **BACK-01**: Backend API is implemented with FastAPI.
+- [x] **BACK-02**: Backend persistence uses PostgreSQL.
+- [x] **BACK-03**: Backend database access and migrations use SQLAlchemy and Alembic or an equivalent reviewed migration workflow.
+- [x] **BACK-04**: Backend validation uses typed request and response schemas.
 - [ ] **BACK-05**: Backend services support tabular reporting/export workflows without placing finance logic in the frontend.
-- [ ] **BACK-06**: Backend design leaves a clear path for later AI/data-heavy features without making AI part of the Phase 1 core.
+- [x] **BACK-06**: Backend design leaves a clear path for later AI/data-heavy features without making AI part of the Phase 1 core.
 
 ### Frontend Foundation
 
-- [ ] **FRNT-01**: Frontend application is implemented as a separate web app in the monorepo.
+- [x] **FRNT-01**: Frontend application is implemented as a separate web app in the monorepo.
 - [ ] **FRNT-02**: Frontend supports dense operational screens for dashboards, forms, and tabular finance data.
-- [ ] **FRNT-03**: Frontend consumes backend APIs through typed or generated contracts.
-- [ ] **FRNT-04**: Frontend does not perform authoritative VAT, ledger, permission, or audit writes client-side.
+- [x] **FRNT-03**: Frontend consumes backend APIs through typed or generated contracts.
+- [x] **FRNT-04**: Frontend does not perform authoritative VAT, ledger, permission, or audit writes client-side.
 
 ### Platform Access
 
@@ -172,21 +172,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ARCH-01 | Phase 1 | Pending |
-| ARCH-02 | Phase 1 | Pending |
-| ARCH-03 | Phase 1 | Pending |
-| ARCH-04 | Phase 1 | Pending |
-| ARCH-05 | Phase 1 | Pending |
-| BACK-01 | Phase 1 | Pending |
-| BACK-02 | Phase 1 | Pending |
-| BACK-03 | Phase 1 | Pending |
-| BACK-04 | Phase 1 | Pending |
+| ARCH-01 | Phase 1 | Complete |
+| ARCH-02 | Phase 1 | Complete |
+| ARCH-03 | Phase 1 | Complete |
+| ARCH-04 | Phase 1 | Complete |
+| ARCH-05 | Phase 1 | Complete |
+| BACK-01 | Phase 1 | Complete |
+| BACK-02 | Phase 1 | Complete |
+| BACK-03 | Phase 1 | Complete |
+| BACK-04 | Phase 1 | Complete |
 | BACK-05 | Phase 5 | Pending |
-| BACK-06 | Phase 1 | Pending |
-| FRNT-01 | Phase 1 | Pending |
+| BACK-06 | Phase 1 | Complete |
+| FRNT-01 | Phase 1 | Complete |
 | FRNT-02 | Phase 5 | Pending |
-| FRNT-03 | Phase 1 | Pending |
-| FRNT-04 | Phase 1 | Pending |
+| FRNT-03 | Phase 1 | Complete |
+| FRNT-04 | Phase 1 | Complete |
 | AUTH-01 | Phase 2 | Pending |
 | AUTH-02 | Phase 2 | Pending |
 | AUTH-03 | Phase 2 | Pending |
@@ -251,6 +251,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONF-06 | Phase 6 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 77 total
 - Mapped to phases: 77
 - Unmapped: 0

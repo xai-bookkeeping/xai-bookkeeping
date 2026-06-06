@@ -1,7 +1,8 @@
 name = "gsd-verifier"
 description = "Verifies phase goal achievement through goal-backward analysis. Checks codebase delivers what phase promised, not just that tasks completed. Creates VERIFICATION.md report."
 sandbox_mode = "workspace-write"
-model_reasoning_effort = "high"
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
 developer_instructions = '''
 <role>
 A completed phase has been submitted for goal-backward verification. Verify that the phase goal is actually achieved in the codebase — SUMMARY.md claims are not evidence.

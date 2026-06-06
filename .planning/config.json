@@ -83,5 +83,31 @@
   },
   "resolve_model_ids": "omit",
   "mode": "yolo",
-  "granularity": "standard"
+  "granularity": "standard",
+  "runtime": "codex",
+  "models": {
+    "execution": "haiku",
+    "verification": "sonnet"
+  },
+  "model_profile_overrides": {
+    "codex": {
+      "haiku": "gpt-5.4-mini",
+      "sonnet": "gpt-5.4"
+    }
+  },
+  "effort": {
+    "agent_overrides": {
+      "gsd-executor": "xhigh",
+      "gsd-verifier": "xhigh",
+      "gsd-plan-checker": "xhigh",
+      "gsd-integration-checker": "xhigh",
+      "gsd-nyquist-auditor": "xhigh",
+      "gsd-ui-checker": "xhigh",
+      "gsd-ui-auditor": "xhigh",
+      "gsd-doc-verifier": "xhigh",
+      "gsd-code-reviewer": "xhigh",
+      "gsd-security-auditor": "xhigh",
+      "gsd-eval-auditor": "xhigh"
+    }
+  }
 }
