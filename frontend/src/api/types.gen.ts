@@ -69,6 +69,40 @@ export type AuthenticatedUserResponse = {
 };
 
 /**
+ * CompanyResponse
+ */
+export type CompanyResponse = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Image Url
+     */
+    image_url: string | null;
+    /**
+     * Is Active
+     */
+    is_active: boolean;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Slug
+     */
+    slug: string | null;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+};
+
+/**
  * DatabaseReadiness
  */
 export type DatabaseReadiness = {
@@ -199,6 +233,36 @@ export type GetAuthenticatedUserApiV1AuthMeGetResponses = {
 };
 
 export type GetAuthenticatedUserApiV1AuthMeGetResponse = GetAuthenticatedUserApiV1AuthMeGetResponses[keyof GetAuthenticatedUserApiV1AuthMeGetResponses];
+
+export type GetCompanyApiV1CompaniesCompanyIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Company Id
+         */
+        company_id: string;
+    };
+    query?: never;
+    url: '/api/v1/companies/{company_id}';
+};
+
+export type GetCompanyApiV1CompaniesCompanyIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetCompanyApiV1CompaniesCompanyIdGetError = GetCompanyApiV1CompaniesCompanyIdGetErrors[keyof GetCompanyApiV1CompaniesCompanyIdGetErrors];
+
+export type GetCompanyApiV1CompaniesCompanyIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: CompanyResponse;
+};
+
+export type GetCompanyApiV1CompaniesCompanyIdGetResponse = GetCompanyApiV1CompaniesCompanyIdGetResponses[keyof GetCompanyApiV1CompaniesCompanyIdGetResponses];
 
 export type ReceiveClerkWebhookApiV1WebhooksClerkPostData = {
     body?: never;

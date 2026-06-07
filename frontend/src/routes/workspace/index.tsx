@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useOutletContext } from "react-router-dom";
 import {
   Badge,
   Button,
@@ -15,7 +16,9 @@ import {
   type HealthResponse,
   type WorkspaceProbeResponse,
 } from "@/api";
+import { PermissionDeniedState } from "@/components/organisms/permission-denied-state";
 import { apiClient } from "@/lib/api-runtime";
+import type { RootRouteContext } from "@/routes/root";
 const latestProbeQueryKey = ["workspace-probe", "latest"] as const;
 
 function formatDateTime(value: string): string {
@@ -42,9 +45,12 @@ function getProbeLabel(probe: WorkspaceProbeResponse | null | undefined): string
 }
 
 export function WorkspaceRoute() {
+  const { activeCompany, companyShellState, isSwitchingCompany, openCompanySwitcher } =
+    useOutletContext<RootRouteContext>();
   const queryClient = useQueryClient();
 
   const healthQuery = useQuery({
+    enabled: companyShellState === "ready",
     queryKey: ["workspace-health"],
     queryFn: async () =>
       getHealth({
@@ -56,6 +62,7 @@ export function WorkspaceRoute() {
   });
 
   const latestProbeQuery = useQuery({
+    enabled: companyShellState === "ready",
     queryKey: latestProbeQueryKey,
     queryFn: async () => {
       const response = await getLatestWorkspaceProbe({
@@ -94,6 +101,29 @@ export function WorkspaceRoute() {
   const latestProbe = latestProbeQuery.data;
   const health = healthQuery.data;
 
+  if (companyShellState === "forbidden") {
+    return <PermissionDeniedState onSwitchCompany={openCompanySwitcher} />;
+  }
+
+  if (companyShellState === "loading" || isSwitchingCompany || !activeCompany) {
+    return (
+      <Card className="border-dashed bg-[rgba(238,243,247,0.45)]">
+        <CardContent className="space-y-3 p-6">
+          <Badge tone="accent" className="w-fit">
+            Switching company...
+          </Badge>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight">Loading company context</h1>
+            <p className="max-w-2xl text-sm leading-6 text-[var(--xb-muted)]">
+              We are refreshing your workspace and clearing company-scoped data before the next
+              company renders.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -104,8 +134,8 @@ export function WorkspaceRoute() {
           <div className="space-y-2">
             <h1 className="text-3xl font-semibold tracking-tight">Workspace probe</h1>
             <p className="max-w-2xl text-sm leading-6 text-[var(--xb-muted)]">
-              Use one action to check the live backend contract and refresh the latest probe
-              result through the generated TypeScript client.
+              Use one action to check the live backend contract for {activeCompany.name} and
+              refresh the latest probe result through the generated TypeScript client.
             </p>
           </div>
         </div>
@@ -131,6 +161,10 @@ export function WorkspaceRoute() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3 rounded-[1.25rem] border border-[color:var(--xb-border)] bg-[color:var(--xb-panel)] p-4 text-sm">
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-[var(--xb-muted)]">Company</span>
+                <span className="font-semibold text-[var(--xb-ink)]">{activeCompany.name}</span>
+              </div>
               <div className="flex items-start justify-between gap-3">
                 <span className="text-[var(--xb-muted)]">API status</span>
                 <span className="font-semibold text-[var(--xb-ink)]">

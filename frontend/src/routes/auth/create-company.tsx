@@ -36,10 +36,6 @@ export function CreateCompanyRoute() {
     return <Navigate replace to="/sign-in" />;
   }
 
-  if (isLoaded && orgId && status !== "pending") {
-    return <Navigate replace to="/workspace" />;
-  }
-
   const isBusy = status === "creating" || status === "pending";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -66,7 +62,7 @@ export function CreateCompanyRoute() {
       <div className="mx-auto max-w-[42rem] space-y-6">
         <div className="space-y-3">
           <Badge tone="accent" className="w-fit">
-            First company setup
+            Company setup
           </Badge>
           <div className="space-y-2">
             <h1 className="text-3xl font-semibold tracking-tight">Create a company workspace</h1>

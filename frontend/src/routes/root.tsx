@@ -1,7 +1,12 @@
 import { useState } from "react";
+import { useAuth } from "@clerk/react";
+import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
+import { getCompanyApiV1CompaniesCompanyIdGet, type CompanyResponse } from "@/api";
+import { CompanySwitcher } from "@/components/molecules/company-switcher";
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/components/ui";
+import { apiClient } from "@/lib/api-runtime";
 import { cn } from "@/lib/cn";
 
 const navigation = [
@@ -35,8 +40,76 @@ function ShellNavLink({
   );
 }
 
+type CompanyShellState = "forbidden" | "loading" | "ready";
+
+export type RootRouteContext = {
+  activeCompany: CompanyResponse | null;
+  companyShellState: CompanyShellState;
+  isSwitchingCompany: boolean;
+  openCompanySwitcher: () => void;
+};
+
 export function RootRoute() {
+  const { orgId } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [companySwitcherOpen, setCompanySwitcherOpen] = useState(false);
+  const [isSwitchingCompany, setIsSwitchingCompany] = useState(false);
+
+  const activeCompanyQuery = useQuery({
+    enabled: Boolean(orgId),
+    queryKey: ["active-company", orgId],
+    queryFn: async () => {
+      const response = await getCompanyApiV1CompaniesCompanyIdGet({
+        client: apiClient,
+        path: {
+          company_id: orgId ?? "",
+        },
+        responseStyle: "fields",
+      });
+
+      if ("error" in response && response.error) {
+        if (response.response?.status === 403) {
+          return { kind: "forbidden" } as const;
+        }
+
+        throw response.error;
+      }
+
+      return {
+        company: response.data ?? null,
+        kind: "ready",
+      } as const;
+    },
+    staleTime: 5_000,
+  });
+
+  const companyShellState: CompanyShellState =
+    isSwitchingCompany || activeCompanyQuery.isLoading || !orgId
+      ? "loading"
+      : activeCompanyQuery.data?.kind === "forbidden"
+        ? "forbidden"
+        : "ready";
+
+  const activeCompany =
+    companyShellState === "ready" && activeCompanyQuery.data?.kind === "ready"
+      ? activeCompanyQuery.data.company
+      : null;
+
+  const activeCompanyName =
+    activeCompany?.name ??
+    (companyShellState === "forbidden" ? "Company access unavailable" : "Loading company context");
+  const activeCompanySubtitle =
+    companyShellState === "forbidden"
+      ? "Switch to an authorized company"
+      : activeCompany?.slug
+        ? activeCompany.slug.replaceAll("-", " ")
+        : "UAE company workspace";
+  const companyBadge =
+    companyShellState === "forbidden"
+      ? { label: "Denied", tone: "warning" as const }
+      : companyShellState === "loading"
+        ? { label: "Loading", tone: "default" as const }
+        : { label: "Live", tone: "success" as const };
 
   return (
     <div className="relative min-h-dvh overflow-hidden bg-[var(--xb-bg)] text-[var(--xb-ink)]">
@@ -85,10 +158,10 @@ export function RootRoute() {
               </p>
               <div className="mt-3 flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm font-semibold">Default workspace</div>
-                  <div className="text-xs text-[var(--xb-muted)]">AED and VAT-ready</div>
+                  <div className="text-sm font-semibold">{activeCompanyName}</div>
+                  <div className="text-xs text-[var(--xb-muted)]">{activeCompanySubtitle}</div>
                 </div>
-                <Badge tone="success">Live</Badge>
+                <Badge tone={companyBadge.tone}>{companyBadge.label}</Badge>
               </div>
             </div>
 
@@ -149,19 +222,28 @@ export function RootRoute() {
                 <Input aria-label="Search workspace" placeholder="Search workspace, customers, invoices..." />
               </div>
 
-              <Link
-                to="/workspace"
-                className="inline-flex h-11 items-center justify-center rounded-2xl border border-transparent bg-[var(--xb-accent)] px-4 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(14,165,233,0.18)] transition-colors hover:bg-sky-500"
-              >
-                Open Workspace
-              </Link>
+              <CompanySwitcher
+                activeCompanyId={activeCompany?.id ?? orgId ?? null}
+                activeCompanyName={activeCompanyName}
+                activeCompanySubtitle={activeCompanySubtitle}
+                isOpen={companySwitcherOpen}
+                onOpenChange={setCompanySwitcherOpen}
+                onSwitchingChange={setIsSwitchingCompany}
+              />
             </div>
           </header>
 
           <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_360px]">
               <div className="min-w-0">
-                <Outlet />
+                <Outlet
+                  context={{
+                    activeCompany,
+                    companyShellState,
+                    isSwitchingCompany,
+                    openCompanySwitcher: () => setCompanySwitcherOpen(true),
+                  } satisfies RootRouteContext}
+                />
               </div>
 
               <aside className="space-y-6">
