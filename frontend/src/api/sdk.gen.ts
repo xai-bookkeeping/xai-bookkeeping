@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateWorkspaceProbeWorkspaceProbePostData, CreateWorkspaceProbeWorkspaceProbePostErrors, CreateWorkspaceProbeWorkspaceProbePostResponses, GetAuthenticatedUserApiV1AuthMeGetData, GetAuthenticatedUserApiV1AuthMeGetResponses, GetCompanyApiV1CompaniesCompanyIdGetData, GetCompanyApiV1CompaniesCompanyIdGetErrors, GetCompanyApiV1CompaniesCompanyIdGetResponses, GetHealthHealthGetData, GetHealthHealthGetResponses, GetLatestWorkspaceProbeWorkspaceProbeLatestGetData, GetLatestWorkspaceProbeWorkspaceProbeLatestGetResponses, GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetData, GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetErrors, GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetResponses, InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostData, InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostErrors, InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostResponses, ReceiveClerkWebhookApiV1WebhooksClerkPostData, ReceiveClerkWebhookApiV1WebhooksClerkPostResponses, RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteData, RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteErrors, RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteResponses, RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteData, RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteErrors, RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteResponses, UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchData, UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchErrors, UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchResponses } from './types.gen';
+import type { CreateWorkspaceProbeWorkspaceProbePostData, CreateWorkspaceProbeWorkspaceProbePostErrors, CreateWorkspaceProbeWorkspaceProbePostResponses, GetAuthenticatedUserApiV1AuthMeGetData, GetAuthenticatedUserApiV1AuthMeGetResponses, GetCompanyApiV1CompaniesCompanyIdGetData, GetCompanyApiV1CompaniesCompanyIdGetErrors, GetCompanyApiV1CompaniesCompanyIdGetResponses, GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetData, GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetErrors, GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetResponses, GetHealthHealthGetData, GetHealthHealthGetResponses, GetLatestWorkspaceProbeWorkspaceProbeLatestGetData, GetLatestWorkspaceProbeWorkspaceProbeLatestGetResponses, GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetData, GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetErrors, GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetResponses, InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostData, InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostErrors, InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostResponses, ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetData, ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetErrors, ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetResponses, ReceiveClerkWebhookApiV1WebhooksClerkPostData, ReceiveClerkWebhookApiV1WebhooksClerkPostResponses, RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteData, RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteErrors, RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteResponses, RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteData, RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteErrors, RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteResponses, UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchData, UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchErrors, UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchResponses, UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchData, UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchErrors, UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -27,6 +27,28 @@ export const getAuthenticatedUserApiV1AuthMeGet = <ThrowOnError extends boolean 
  * Get Company
  */
 export const getCompanyApiV1CompaniesCompanyIdGet = <ThrowOnError extends boolean = false>(options: Options<GetCompanyApiV1CompaniesCompanyIdGetData, ThrowOnError>): RequestResult<GetCompanyApiV1CompaniesCompanyIdGetResponses, GetCompanyApiV1CompaniesCompanyIdGetErrors, ThrowOnError> => (options.client ?? client).get<GetCompanyApiV1CompaniesCompanyIdGetResponses, GetCompanyApiV1CompaniesCompanyIdGetErrors, ThrowOnError>({ url: '/api/v1/companies/{company_id}', ...options });
+
+/**
+ * List Audit Events
+ */
+export const listAuditEventsApiV1CompaniesCompanyIdAuditEventsGet = <ThrowOnError extends boolean = false>(options: Options<ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetData, ThrowOnError>): RequestResult<ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetResponses, ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetErrors, ThrowOnError> => (options.client ?? client).get<ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetResponses, ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetErrors, ThrowOnError>({ url: '/api/v1/companies/{company_id}/audit-events', ...options });
+
+/**
+ * Get Company Settings
+ */
+export const getCompanySettingsApiV1CompaniesCompanyIdSettingsGet = <ThrowOnError extends boolean = false>(options: Options<GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetData, ThrowOnError>): RequestResult<GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetResponses, GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetErrors, ThrowOnError> => (options.client ?? client).get<GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetResponses, GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetErrors, ThrowOnError>({ url: '/api/v1/companies/{company_id}/settings', ...options });
+
+/**
+ * Update Company Settings
+ */
+export const updateCompanySettingsApiV1CompaniesCompanyIdSettingsPatch = <ThrowOnError extends boolean = false>(options: Options<UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchData, ThrowOnError>): RequestResult<UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchResponses, UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchErrors, ThrowOnError> => (options.client ?? client).patch<UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchResponses, UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchErrors, ThrowOnError>({
+    url: '/api/v1/companies/{company_id}/settings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Get Team Directory

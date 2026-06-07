@@ -23,6 +23,66 @@ export type ApplicationMetadata = {
 };
 
 /**
+ * AuditEventListResponse
+ */
+export type AuditEventListResponse = {
+    /**
+     * Events
+     */
+    events: Array<AuditEventResponse>;
+};
+
+/**
+ * AuditEventResponse
+ */
+export type AuditEventResponse = {
+    /**
+     * Action
+     */
+    action: string;
+    /**
+     * Actor Clerk User Id
+     */
+    actor_clerk_user_id: string | null;
+    /**
+     * After State
+     */
+    after_state: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Before State
+     */
+    before_state: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Company Id
+     */
+    company_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Entity Id
+     */
+    entity_id: string;
+    /**
+     * Entity Type
+     */
+    entity_type: string;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Session Id
+     */
+    session_id: string | null;
+};
+
+/**
  * AuthenticatedUserResponse
  */
 export type AuthenticatedUserResponse = {
@@ -100,6 +160,66 @@ export type CompanyResponse = {
      * Updated At
      */
     updated_at: string;
+};
+
+/**
+ * CompanySettingsResponse
+ */
+export type CompanySettingsResponse = {
+    /**
+     * Business Activity
+     */
+    business_activity: string | null;
+    /**
+     * Default Currency
+     */
+    default_currency: string;
+    /**
+     * Default Vat Rate
+     */
+    default_vat_rate: string;
+    /**
+     * Legal Name
+     */
+    legal_name: string;
+    /**
+     * Registered Address
+     */
+    registered_address: string | null;
+    /**
+     * Trn
+     */
+    trn: string | null;
+    /**
+     * Vat Registration Status
+     */
+    vat_registration_status: 'not_registered' | 'registered';
+};
+
+/**
+ * CompanySettingsUpdateRequest
+ */
+export type CompanySettingsUpdateRequest = {
+    /**
+     * Business Activity
+     */
+    business_activity: string;
+    /**
+     * Legal Name
+     */
+    legal_name: string;
+    /**
+     * Registered Address
+     */
+    registered_address?: string | null;
+    /**
+     * Trn
+     */
+    trn?: string | null;
+    /**
+     * Vat Registration Status
+     */
+    vat_registration_status: 'not_registered' | 'registered';
 };
 
 /**
@@ -448,6 +568,101 @@ export type GetCompanyApiV1CompaniesCompanyIdGetResponses = {
 };
 
 export type GetCompanyApiV1CompaniesCompanyIdGetResponse = GetCompanyApiV1CompaniesCompanyIdGetResponses[keyof GetCompanyApiV1CompaniesCompanyIdGetResponses];
+
+export type ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetData = {
+    body?: never;
+    path: {
+        /**
+         * Company Id
+         */
+        company_id: string;
+    };
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/companies/{company_id}/audit-events';
+};
+
+export type ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetError = ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetErrors[keyof ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetErrors];
+
+export type ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: AuditEventListResponse;
+};
+
+export type ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetResponse = ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetResponses[keyof ListAuditEventsApiV1CompaniesCompanyIdAuditEventsGetResponses];
+
+export type GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetData = {
+    body?: never;
+    path: {
+        /**
+         * Company Id
+         */
+        company_id: string;
+    };
+    query?: never;
+    url: '/api/v1/companies/{company_id}/settings';
+};
+
+export type GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetError = GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetErrors[keyof GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetErrors];
+
+export type GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: CompanySettingsResponse;
+};
+
+export type GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetResponse = GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetResponses[keyof GetCompanySettingsApiV1CompaniesCompanyIdSettingsGetResponses];
+
+export type UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchData = {
+    body: CompanySettingsUpdateRequest;
+    path: {
+        /**
+         * Company Id
+         */
+        company_id: string;
+    };
+    query?: never;
+    url: '/api/v1/companies/{company_id}/settings';
+};
+
+export type UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchError = UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchErrors[keyof UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchErrors];
+
+export type UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: CompanySettingsResponse;
+};
+
+export type UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchResponse = UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchResponses[keyof UpdateCompanySettingsApiV1CompaniesCompanyIdSettingsPatchResponses];
 
 export type GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetData = {
     body?: never;

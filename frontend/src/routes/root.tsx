@@ -11,7 +11,9 @@ import { cn } from "@/lib/cn";
 
 const navigation = [
   { end: true, label: "Workspace", to: "/workspace", tone: "accent" as const, status: "Open" },
+  { label: "Company settings", to: "/workspace/settings", tone: "accent" as const, status: "Live" },
   { label: "Team & roles", to: "/workspace/team", tone: "accent" as const, status: "Live" },
+  { label: "Activity & audit", to: "/workspace/audit", tone: "accent" as const, status: "Live" },
   { label: "Customers", status: "Planned" },
   { label: "Suppliers", status: "Planned" },
   { label: "VAT", status: "Planned" },
