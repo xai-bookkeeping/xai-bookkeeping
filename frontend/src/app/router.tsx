@@ -9,6 +9,7 @@ import { CreateCompanyRoute } from "@/routes/auth/create-company";
 import { SignInRoute } from "@/routes/auth/sign-in";
 import { RootRoute } from "@/routes/root";
 import { WorkspaceRoute } from "@/routes/workspace";
+import { TeamRolesRoute } from "@/routes/workspace/team";
 
 function AuthLoadingState() {
   return (
@@ -77,7 +78,16 @@ export const appRoutes: RouteObject[] = [
         children: [
           {
             path: "workspace",
-            element: <WorkspaceRoute />,
+            children: [
+              {
+                index: true,
+                element: <WorkspaceRoute />,
+              },
+              {
+                path: "team",
+                element: <TeamRolesRoute />,
+              },
+            ],
           },
         ],
       },

@@ -7,6 +7,7 @@ from app.core.config import get_settings
 from app.db.base import Base
 from app.db.models import Company  # noqa: F401
 from app.db.models import CompanyMembership  # noqa: F401
+from app.db.models import RolePermission  # noqa: F401
 from app.db.models import User  # noqa: F401
 from app.db.models import WorkspaceProbeRun  # noqa: F401
 from app.db.session import build_engine

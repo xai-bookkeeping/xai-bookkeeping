@@ -11,6 +11,7 @@ from app.db.models.company import Company
 from app.db.models.company_membership import CompanyMembership
 from app.core.config import Settings
 from app.db.models.user import User
+from app.platform.permissions import normalize_company_role
 
 
 def verify_clerk_webhook(
@@ -238,7 +239,7 @@ async def sync_clerk_company_membership_event(
             clerk_membership_id=clerk_membership_id,
             company_id=company.id,
             user_id=user.id,
-            role=_extract_string(membership_data.get("role")) or "member",
+            role=normalize_company_role(_extract_string(membership_data.get("role"))),
             status="active",
         )
         session.add(membership)
@@ -248,7 +249,9 @@ async def sync_clerk_company_membership_event(
     membership.clerk_membership_id = clerk_membership_id
     membership.company_id = company.id
     membership.user_id = user.id
-    membership.role = _extract_string(membership_data.get("role")) or membership.role
+    membership.role = normalize_company_role(
+        _extract_string(membership_data.get("role")) or membership.role
+    )
     membership.status = "inactive" if event_type == "organizationMembership.deleted" else "active"
 
     await session.flush()

@@ -10,21 +10,25 @@ import { apiClient } from "@/lib/api-runtime";
 import { cn } from "@/lib/cn";
 
 const navigation = [
-  { label: "Workspace", to: "/workspace", tone: "accent" as const, status: "Open" },
+  { end: true, label: "Workspace", to: "/workspace", tone: "accent" as const, status: "Open" },
+  { label: "Team & roles", to: "/workspace/team", tone: "accent" as const, status: "Live" },
   { label: "Customers", status: "Planned" },
   { label: "Suppliers", status: "Planned" },
   { label: "VAT", status: "Planned" },
 ];
 
 function ShellNavLink({
+  end = false,
   to,
   children,
 }: {
+  end?: boolean;
   to: string;
   children: ReactNode;
 }) {
   return (
     <NavLink
+      end={end}
       to={to}
       className={({ isActive }) =>
         cn(
@@ -168,7 +172,7 @@ export function RootRoute() {
             <nav className="space-y-1">
               {navigation.map((item) => (
                 "to" in item ? (
-                  <ShellNavLink key={item.label} to={item.to}>
+                  <ShellNavLink key={item.label} end={"end" in item ? item.end : false} to={item.to}>
                     <span>{item.label}</span>
                     <Badge tone={item.tone === "accent" ? "accent" : "default"}>{item.status}</Badge>
                   </ShellNavLink>

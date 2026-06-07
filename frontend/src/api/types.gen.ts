@@ -151,6 +151,191 @@ export type HealthResponse = {
 };
 
 /**
+ * PendingInviteResponse
+ */
+export type PendingInviteResponse = {
+    /**
+     * Created At
+     */
+    created_at: string | null;
+    /**
+     * Email Address
+     */
+    email_address: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Role
+     */
+    role: 'owner' | 'admin' | 'accountant' | 'viewer';
+    /**
+     * Role Description
+     */
+    role_description: string;
+    /**
+     * Role Label
+     */
+    role_label: string;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
+ * TeamActionResponse
+ */
+export type TeamActionResponse = {
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
+ * TeamDirectoryResponse
+ */
+export type TeamDirectoryResponse = {
+    /**
+     * Members
+     */
+    members: Array<TeamMemberResponse>;
+    /**
+     * Pending Invites
+     */
+    pending_invites: Array<PendingInviteResponse>;
+    permissions: TeamPermissionsResponse;
+};
+
+/**
+ * TeamInviteRequest
+ */
+export type TeamInviteRequest = {
+    /**
+     * Email Address
+     */
+    email_address: string;
+    /**
+     * Message
+     */
+    message?: string | null;
+    /**
+     * Role
+     */
+    role?: 'owner' | 'admin' | 'accountant' | 'viewer';
+};
+
+/**
+ * TeamInviteResponse
+ */
+export type TeamInviteResponse = {
+    /**
+     * Created At
+     */
+    created_at: string | null;
+    /**
+     * Email Address
+     */
+    email_address: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Role
+     */
+    role: 'owner' | 'admin' | 'accountant' | 'viewer';
+    /**
+     * Role Description
+     */
+    role_description: string;
+    /**
+     * Role Label
+     */
+    role_label: string;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
+ * TeamMemberResponse
+ */
+export type TeamMemberResponse = {
+    /**
+     * Clerk Membership Id
+     */
+    clerk_membership_id: string;
+    /**
+     * Clerk User Id
+     */
+    clerk_user_id: string;
+    /**
+     * Email Address
+     */
+    email_address: string | null;
+    /**
+     * Is Current User
+     */
+    is_current_user: boolean;
+    /**
+     * Last Active At
+     */
+    last_active_at: string | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Role
+     */
+    role: 'owner' | 'admin' | 'accountant' | 'viewer';
+    /**
+     * Role Description
+     */
+    role_description: string;
+    /**
+     * Role Label
+     */
+    role_label: string;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
+ * TeamPermissionsResponse
+ */
+export type TeamPermissionsResponse = {
+    /**
+     * Can Change Roles
+     */
+    can_change_roles: boolean;
+    /**
+     * Can Invite Members
+     */
+    can_invite_members: boolean;
+    /**
+     * Can Remove Members
+     */
+    can_remove_members: boolean;
+};
+
+/**
+ * TeamRoleUpdateRequest
+ */
+export type TeamRoleUpdateRequest = {
+    /**
+     * Role
+     */
+    role: 'owner' | 'admin' | 'accountant' | 'viewer';
+};
+
+/**
  * ValidationError
  */
 export type ValidationError = {
@@ -263,6 +448,168 @@ export type GetCompanyApiV1CompaniesCompanyIdGetResponses = {
 };
 
 export type GetCompanyApiV1CompaniesCompanyIdGetResponse = GetCompanyApiV1CompaniesCompanyIdGetResponses[keyof GetCompanyApiV1CompaniesCompanyIdGetResponses];
+
+export type GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetData = {
+    body?: never;
+    path: {
+        /**
+         * Company Id
+         */
+        company_id: string;
+    };
+    query?: never;
+    url: '/api/v1/companies/{company_id}/team';
+};
+
+export type GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetError = GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetErrors[keyof GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetErrors];
+
+export type GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: TeamDirectoryResponse;
+};
+
+export type GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetResponse = GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetResponses[keyof GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetResponses];
+
+export type InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostData = {
+    body: TeamInviteRequest;
+    path: {
+        /**
+         * Company Id
+         */
+        company_id: string;
+    };
+    query?: never;
+    url: '/api/v1/companies/{company_id}/team/invitations';
+};
+
+export type InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostError = InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostErrors[keyof InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostErrors];
+
+export type InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: TeamInviteResponse;
+};
+
+export type InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostResponse = InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostResponses[keyof InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostResponses];
+
+export type RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Invitation Id
+         */
+        invitation_id: string;
+        /**
+         * Company Id
+         */
+        company_id: string;
+    };
+    query?: never;
+    url: '/api/v1/companies/{company_id}/team/invitations/{invitation_id}';
+};
+
+export type RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteError = RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteErrors[keyof RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteErrors];
+
+export type RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteResponse = RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteResponses[keyof RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteResponses];
+
+export type RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Clerk User Id
+         */
+        clerk_user_id: string;
+        /**
+         * Company Id
+         */
+        company_id: string;
+    };
+    query?: never;
+    url: '/api/v1/companies/{company_id}/team/members/{clerk_user_id}';
+};
+
+export type RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteError = RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteErrors[keyof RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteErrors];
+
+export type RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteResponse = RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteResponses[keyof RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteResponses];
+
+export type UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchData = {
+    body: TeamRoleUpdateRequest;
+    path: {
+        /**
+         * Clerk User Id
+         */
+        clerk_user_id: string;
+        /**
+         * Company Id
+         */
+        company_id: string;
+    };
+    query?: never;
+    url: '/api/v1/companies/{company_id}/team/members/{clerk_user_id}';
+};
+
+export type UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchError = UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchErrors[keyof UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchErrors];
+
+export type UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: TeamActionResponse;
+};
+
+export type UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchResponse = UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchResponses[keyof UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchResponses];
 
 export type ReceiveClerkWebhookApiV1WebhooksClerkPostData = {
     body?: never;

@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateWorkspaceProbeWorkspaceProbePostData, CreateWorkspaceProbeWorkspaceProbePostErrors, CreateWorkspaceProbeWorkspaceProbePostResponses, GetAuthenticatedUserApiV1AuthMeGetData, GetAuthenticatedUserApiV1AuthMeGetResponses, GetCompanyApiV1CompaniesCompanyIdGetData, GetCompanyApiV1CompaniesCompanyIdGetErrors, GetCompanyApiV1CompaniesCompanyIdGetResponses, GetHealthHealthGetData, GetHealthHealthGetResponses, GetLatestWorkspaceProbeWorkspaceProbeLatestGetData, GetLatestWorkspaceProbeWorkspaceProbeLatestGetResponses, ReceiveClerkWebhookApiV1WebhooksClerkPostData, ReceiveClerkWebhookApiV1WebhooksClerkPostResponses } from './types.gen';
+import type { CreateWorkspaceProbeWorkspaceProbePostData, CreateWorkspaceProbeWorkspaceProbePostErrors, CreateWorkspaceProbeWorkspaceProbePostResponses, GetAuthenticatedUserApiV1AuthMeGetData, GetAuthenticatedUserApiV1AuthMeGetResponses, GetCompanyApiV1CompaniesCompanyIdGetData, GetCompanyApiV1CompaniesCompanyIdGetErrors, GetCompanyApiV1CompaniesCompanyIdGetResponses, GetHealthHealthGetData, GetHealthHealthGetResponses, GetLatestWorkspaceProbeWorkspaceProbeLatestGetData, GetLatestWorkspaceProbeWorkspaceProbeLatestGetResponses, GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetData, GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetErrors, GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetResponses, InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostData, InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostErrors, InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostResponses, ReceiveClerkWebhookApiV1WebhooksClerkPostData, ReceiveClerkWebhookApiV1WebhooksClerkPostResponses, RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteData, RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteErrors, RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteResponses, RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteData, RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteErrors, RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteResponses, UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchData, UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchErrors, UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -27,6 +27,45 @@ export const getAuthenticatedUserApiV1AuthMeGet = <ThrowOnError extends boolean 
  * Get Company
  */
 export const getCompanyApiV1CompaniesCompanyIdGet = <ThrowOnError extends boolean = false>(options: Options<GetCompanyApiV1CompaniesCompanyIdGetData, ThrowOnError>): RequestResult<GetCompanyApiV1CompaniesCompanyIdGetResponses, GetCompanyApiV1CompaniesCompanyIdGetErrors, ThrowOnError> => (options.client ?? client).get<GetCompanyApiV1CompaniesCompanyIdGetResponses, GetCompanyApiV1CompaniesCompanyIdGetErrors, ThrowOnError>({ url: '/api/v1/companies/{company_id}', ...options });
+
+/**
+ * Get Team Directory
+ */
+export const getTeamDirectoryApiV1CompaniesCompanyIdTeamGet = <ThrowOnError extends boolean = false>(options: Options<GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetData, ThrowOnError>): RequestResult<GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetResponses, GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetErrors, ThrowOnError> => (options.client ?? client).get<GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetResponses, GetTeamDirectoryApiV1CompaniesCompanyIdTeamGetErrors, ThrowOnError>({ url: '/api/v1/companies/{company_id}/team', ...options });
+
+/**
+ * Invite Team Member
+ */
+export const inviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPost = <ThrowOnError extends boolean = false>(options: Options<InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostData, ThrowOnError>): RequestResult<InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostResponses, InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostErrors, ThrowOnError> => (options.client ?? client).post<InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostResponses, InviteTeamMemberApiV1CompaniesCompanyIdTeamInvitationsPostErrors, ThrowOnError>({
+    url: '/api/v1/companies/{company_id}/team/invitations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Revoke Invitation
+ */
+export const revokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDelete = <ThrowOnError extends boolean = false>(options: Options<RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteData, ThrowOnError>): RequestResult<RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteResponses, RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteErrors, ThrowOnError> => (options.client ?? client).delete<RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteResponses, RevokeInvitationApiV1CompaniesCompanyIdTeamInvitationsInvitationIdDeleteErrors, ThrowOnError>({ url: '/api/v1/companies/{company_id}/team/invitations/{invitation_id}', ...options });
+
+/**
+ * Remove Member
+ */
+export const removeMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDelete = <ThrowOnError extends boolean = false>(options: Options<RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteData, ThrowOnError>): RequestResult<RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteResponses, RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteErrors, ThrowOnError> => (options.client ?? client).delete<RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteResponses, RemoveMemberApiV1CompaniesCompanyIdTeamMembersClerkUserIdDeleteErrors, ThrowOnError>({ url: '/api/v1/companies/{company_id}/team/members/{clerk_user_id}', ...options });
+
+/**
+ * Update Member Role
+ */
+export const updateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatch = <ThrowOnError extends boolean = false>(options: Options<UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchData, ThrowOnError>): RequestResult<UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchResponses, UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchErrors, ThrowOnError> => (options.client ?? client).patch<UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchResponses, UpdateMemberRoleApiV1CompaniesCompanyIdTeamMembersClerkUserIdPatchErrors, ThrowOnError>({
+    url: '/api/v1/companies/{company_id}/team/members/{clerk_user_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Receive Clerk Webhook
