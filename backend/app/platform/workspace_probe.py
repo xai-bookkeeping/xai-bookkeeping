@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.repositories.workspace_probe import (
     create_workspace_probe_run,
@@ -29,11 +29,11 @@ class WorkspaceProbeResponse(BaseModel):
     updated_at: datetime
 
 
-def create_workspace_probe(
-    session: Session,
+async def create_workspace_probe(
+    session: AsyncSession,
     payload: WorkspaceProbeCreateRequest,
 ) -> WorkspaceProbeResponse:
-    probe_run = create_workspace_probe_run(
+    probe_run = await create_workspace_probe_run(
         session=session,
         source=payload.source,
         status=payload.status,
@@ -41,8 +41,8 @@ def create_workspace_probe(
     return WorkspaceProbeResponse.model_validate(probe_run)
 
 
-def get_latest_workspace_probe(session: Session) -> WorkspaceProbeResponse | None:
-    probe_run = get_latest_workspace_probe_run(session)
+async def get_latest_workspace_probe(session: AsyncSession) -> WorkspaceProbeResponse | None:
+    probe_run = await get_latest_workspace_probe_run(session)
     if probe_run is None:
         return None
     return WorkspaceProbeResponse.model_validate(probe_run)

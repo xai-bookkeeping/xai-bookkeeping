@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     environment: str = "development"
     database_url: str | None = None
+    clerk_publishable_key: str | None = None
+    clerk_secret_key: str | None = None
+    clerk_jwt_key: str | None = None
+    clerk_webhook_signing_secret: str | None = None
+    clerk_authorized_parties: tuple[str, ...] = ()
     cors_allowed_origins: tuple[str, ...] = (
         "http://localhost:5173",
         "http://127.0.0.1:5173",

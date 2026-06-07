@@ -5,6 +5,7 @@ from sqlalchemy.engine import Engine
 
 from app.core.config import get_settings
 from app.db.base import Base
+from app.db.models import User  # noqa: F401
 from app.db.models import WorkspaceProbeRun  # noqa: F401
 from app.db.session import build_engine
 

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db_session
 from app.platform.workspace_probe import (
@@ -13,18 +13,18 @@ router = APIRouter(tags=["workspace-probe"])
 
 
 @router.post("/workspace-probe", response_model=WorkspaceProbeResponse, status_code=201)
-def create_workspace_probe(
+async def create_workspace_probe(
     payload: WorkspaceProbeCreateRequest,
-    session: Session = Depends(get_db_session),
+    session: AsyncSession = Depends(get_db_session),
 ) -> WorkspaceProbeResponse:
-    return create_workspace_probe_record(session=session, payload=payload)
+    return await create_workspace_probe_record(session=session, payload=payload)
 
 
 @router.get("/workspace-probe/latest", response_model=WorkspaceProbeResponse)
-def get_latest_workspace_probe(
-    session: Session = Depends(get_db_session),
+async def get_latest_workspace_probe(
+    session: AsyncSession = Depends(get_db_session),
 ) -> WorkspaceProbeResponse:
-    probe_run = get_latest_workspace_probe_record(session)
+    probe_run = await get_latest_workspace_probe_record(session)
     if probe_run is None:
         raise HTTPException(status_code=404, detail="No workspace probe runs have been recorded")
     return probe_run
