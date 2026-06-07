@@ -1,11 +1,12 @@
 from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Path, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Response, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.audit.service import record_audit_event
 from app.db.models.company_membership import CompanyMembership
 from app.db.models.user import User
 from app.db.session import get_db_session
@@ -87,6 +88,24 @@ class TeamActionResponse(BaseModel):
     status: str
 
 
+async def _get_company_member(
+    session: AsyncSession,
+    *,
+    clerk_user_id: str,
+    company_id: str,
+) -> tuple[User, CompanyMembership]:
+    statement = (
+        select(User, CompanyMembership)
+        .join(CompanyMembership, CompanyMembership.user_id == User.id)
+        .where(CompanyMembership.company_id == company_id)
+        .where(User.clerk_user_id == clerk_user_id)
+    )
+    row = (await session.execute(statement)).first()
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company member not found")
+    return row
+
+
 def _build_display_name(user: User) -> str:
     full_name = " ".join(part for part in [user.first_name, user.last_name] if part)
     if full_name:
@@ -164,6 +183,7 @@ async def invite_team_member(
     request: TeamInviteRequest,
     permission: CompanyPermissionContext = Depends(require_company_permission("users:invite")),
     clerk_client: ClerkOrganizationClient = Depends(get_clerk_organization_client),
+    session: AsyncSession = Depends(get_db_session),
 ) -> TeamInviteResponse:
     invitation = clerk_client.invite_member(
         company_id=permission.access.company.id,
@@ -173,6 +193,18 @@ async def invite_team_member(
         role=request.role,
     )
     serialized = _serialize_invitation(invitation)
+    await record_audit_event(
+        session,
+        action="team.member_invited",
+        actor_clerk_user_id=permission.access.principal.clerk_user_id,
+        after_state=serialized.model_dump(mode="json"),
+        before_state=None,
+        company_id=permission.access.company.id,
+        entity_id=serialized.id,
+        entity_type="invitation",
+        session_id=permission.access.principal.session_id,
+    )
+    await session.commit()
     return TeamInviteResponse(**serialized.model_dump())
 
 
@@ -182,12 +214,36 @@ async def update_member_role(
     clerk_user_id: str = Path(...),
     permission: CompanyPermissionContext = Depends(require_company_permission("users:update-role")),
     clerk_client: ClerkOrganizationClient = Depends(get_clerk_organization_client),
+    session: AsyncSession = Depends(get_db_session),
 ) -> TeamActionResponse:
+    user, membership = await _get_company_member(
+        session,
+        clerk_user_id=clerk_user_id,
+        company_id=permission.access.company.id,
+    )
     clerk_client.update_member_role(
         company_id=permission.access.company.id,
         clerk_user_id=clerk_user_id,
         role=request.role,
     )
+    await record_audit_event(
+        session,
+        action="team.role_updated",
+        actor_clerk_user_id=permission.access.principal.clerk_user_id,
+        after_state={
+            "email_address": user.primary_email_address,
+            "role": request.role,
+        },
+        before_state={
+            "email_address": user.primary_email_address,
+            "role": membership.role,
+        },
+        company_id=permission.access.company.id,
+        entity_id=clerk_user_id,
+        entity_type="membership",
+        session_id=permission.access.principal.session_id,
+    )
+    await session.commit()
     return TeamActionResponse(status="accepted")
 
 
@@ -196,11 +252,36 @@ async def remove_member(
     clerk_user_id: str = Path(...),
     permission: CompanyPermissionContext = Depends(require_company_permission("users:remove")),
     clerk_client: ClerkOrganizationClient = Depends(get_clerk_organization_client),
+    session: AsyncSession = Depends(get_db_session),
 ) -> Response:
+    user, membership = await _get_company_member(
+        session,
+        clerk_user_id=clerk_user_id,
+        company_id=permission.access.company.id,
+    )
     clerk_client.remove_member(
         company_id=permission.access.company.id,
         clerk_user_id=clerk_user_id,
     )
+    await record_audit_event(
+        session,
+        action="team.member_removed",
+        actor_clerk_user_id=permission.access.principal.clerk_user_id,
+        after_state={
+            "email_address": user.primary_email_address,
+            "status": "removed",
+        },
+        before_state={
+            "email_address": user.primary_email_address,
+            "role": membership.role,
+            "status": membership.status,
+        },
+        company_id=permission.access.company.id,
+        entity_id=clerk_user_id,
+        entity_type="membership",
+        session_id=permission.access.principal.session_id,
+    )
+    await session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -209,10 +290,28 @@ async def revoke_invitation(
     invitation_id: str = Path(...),
     permission: CompanyPermissionContext = Depends(require_company_permission("users:invite")),
     clerk_client: ClerkOrganizationClient = Depends(get_clerk_organization_client),
+    session: AsyncSession = Depends(get_db_session),
 ) -> Response:
-    clerk_client.revoke_invitation(
+    invitation = clerk_client.revoke_invitation(
         company_id=permission.access.company.id,
         invitation_id=invitation_id,
         requesting_user_id=permission.access.principal.clerk_user_id,
     )
+    await record_audit_event(
+        session,
+        action="team.invitation_revoked",
+        actor_clerk_user_id=permission.access.principal.clerk_user_id,
+        after_state={
+            "email_address": invitation.email_address,
+            "status": invitation.status,
+        },
+        before_state={
+            "status": "pending",
+        },
+        company_id=permission.access.company.id,
+        entity_id=invitation_id,
+        entity_type="invitation",
+        session_id=permission.access.principal.session_id,
+    )
+    await session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

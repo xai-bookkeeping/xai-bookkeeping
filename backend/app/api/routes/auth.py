@@ -6,6 +6,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from svix.webhooks import WebhookVerificationError
 
+from app.audit.service import record_audit_event
+from app.db.models.audit_event import AuditEvent
+from app.db.models.company import Company
+from app.db.models.company_membership import CompanyMembership
 from app.db.models.user import User
 from app.db.session import get_db_session
 from app.platform.auth import AuthenticatedPrincipal, get_authenticated_principal
@@ -41,6 +45,40 @@ async def get_authenticated_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Authenticated user has no local shadow row",
         )
+
+    if principal.active_organization_id and principal.session_id:
+        existing_event = (await session.scalars(
+            select(AuditEvent)
+            .where(AuditEvent.company_id == principal.active_organization_id)
+            .where(AuditEvent.action == "auth.login_success")
+            .where(AuditEvent.session_id == principal.session_id)
+        )).first()
+
+        if existing_event is None:
+            company = await session.get(Company, principal.active_organization_id)
+            membership = (await session.scalars(
+                select(CompanyMembership)
+                .where(CompanyMembership.company_id == principal.active_organization_id)
+                .where(CompanyMembership.user_id == user.id)
+                .where(CompanyMembership.status == "active")
+            )).first()
+            if company is not None and company.is_active and membership is not None:
+                await record_audit_event(
+                    session,
+                    action="auth.login_success",
+                    actor_clerk_user_id=principal.clerk_user_id,
+                    after_state={
+                        "role": membership.role,
+                        "status": membership.status,
+                    },
+                    before_state=None,
+                    company_id=company.id,
+                    entity_id=principal.session_id,
+                    entity_type="session",
+                    session_id=principal.session_id,
+                )
+                await session.commit()
+
     return AuthenticatedUserResponse.model_validate(user)
 
 
