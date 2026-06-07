@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.api.routes.auth import get_authenticated_principal
 from app.core.config import Settings
+from app.db.models.audit_event import AuditEvent
 from app.db.models.company import Company
 from app.db.models.company_membership import CompanyMembership
 from app.db.models.user import User
@@ -48,6 +49,8 @@ def reset_company_tables() -> Generator[None, None, None]:
         return
 
     with SessionLocal() as session:
+        if inspector.has_table("audit_events"):
+            session.execute(delete(AuditEvent))
         if inspector.has_table("company_memberships"):
             session.execute(delete(CompanyMembership))
         if inspector.has_table("companies"):
