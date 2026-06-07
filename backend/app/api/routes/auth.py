@@ -9,7 +9,7 @@ from svix.webhooks import WebhookVerificationError
 from app.db.models.user import User
 from app.db.session import get_db_session
 from app.platform.auth import AuthenticatedPrincipal, get_authenticated_principal
-from app.platform.webhooks import sync_clerk_user_event, verify_clerk_webhook
+from app.platform.webhooks import sync_clerk_event, verify_clerk_webhook
 
 router = APIRouter(prefix="/api/v1", tags=["auth"])
 
@@ -58,6 +58,6 @@ async def receive_clerk_webhook(
             detail="Invalid Clerk webhook signature",
         ) from exc
 
-    await sync_clerk_user_event(session, event)
+    await sync_clerk_event(session, event)
     await session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
