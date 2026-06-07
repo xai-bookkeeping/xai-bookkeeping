@@ -15,12 +15,8 @@ import {
   type HealthResponse,
   type WorkspaceProbeResponse,
 } from "@/api";
-import { client as apiClient } from "@/api/client.gen";
-
-const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+import { apiClient } from "@/lib/api-runtime";
 const latestProbeQueryKey = ["workspace-probe", "latest"] as const;
-
-apiClient.setConfig({ baseUrl: apiBaseUrl });
 
 function formatDateTime(value: string): string {
   return new Intl.DateTimeFormat("en-US", {

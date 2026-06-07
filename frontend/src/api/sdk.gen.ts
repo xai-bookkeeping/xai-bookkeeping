@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateWorkspaceProbeWorkspaceProbePostData, CreateWorkspaceProbeWorkspaceProbePostErrors, CreateWorkspaceProbeWorkspaceProbePostResponses, GetHealthHealthGetData, GetHealthHealthGetResponses, GetLatestWorkspaceProbeWorkspaceProbeLatestGetData, GetLatestWorkspaceProbeWorkspaceProbeLatestGetResponses } from './types.gen';
+import type { CreateWorkspaceProbeWorkspaceProbePostData, CreateWorkspaceProbeWorkspaceProbePostErrors, CreateWorkspaceProbeWorkspaceProbePostResponses, GetAuthenticatedUserApiV1AuthMeGetData, GetAuthenticatedUserApiV1AuthMeGetResponses, GetHealthHealthGetData, GetHealthHealthGetResponses, GetLatestWorkspaceProbeWorkspaceProbeLatestGetData, GetLatestWorkspaceProbeWorkspaceProbeLatestGetResponses, ReceiveClerkWebhookApiV1WebhooksClerkPostData, ReceiveClerkWebhookApiV1WebhooksClerkPostResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -17,6 +17,16 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: Record<string, unknown>;
 };
+
+/**
+ * Get Authenticated User
+ */
+export const getAuthenticatedUserApiV1AuthMeGet = <ThrowOnError extends boolean = false>(options?: Options<GetAuthenticatedUserApiV1AuthMeGetData, ThrowOnError>): RequestResult<GetAuthenticatedUserApiV1AuthMeGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetAuthenticatedUserApiV1AuthMeGetResponses, unknown, ThrowOnError>({ url: '/api/v1/auth/me', ...options });
+
+/**
+ * Receive Clerk Webhook
+ */
+export const receiveClerkWebhookApiV1WebhooksClerkPost = <ThrowOnError extends boolean = false>(options?: Options<ReceiveClerkWebhookApiV1WebhooksClerkPostData, ThrowOnError>): RequestResult<ReceiveClerkWebhookApiV1WebhooksClerkPostResponses, unknown, ThrowOnError> => (options?.client ?? client).post<ReceiveClerkWebhookApiV1WebhooksClerkPostResponses, unknown, ThrowOnError>({ url: '/api/v1/webhooks/clerk', ...options });
 
 /**
  * Get Health

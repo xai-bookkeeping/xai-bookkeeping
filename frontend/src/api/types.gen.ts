@@ -23,6 +23,52 @@ export type ApplicationMetadata = {
 };
 
 /**
+ * AuthenticatedUserResponse
+ */
+export type AuthenticatedUserResponse = {
+    /**
+     * Clerk User Id
+     */
+    clerk_user_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * First Name
+     */
+    first_name: string | null;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Image Url
+     */
+    image_url: string | null;
+    /**
+     * Is Active
+     */
+    is_active: boolean;
+    /**
+     * Last Name
+     */
+    last_name: string | null;
+    /**
+     * Primary Email Address
+     */
+    primary_email_address: string | null;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Username
+     */
+    username: string | null;
+};
+
+/**
  * DatabaseReadiness
  */
 export type DatabaseReadiness = {
@@ -137,6 +183,38 @@ export type WorkspaceProbeResponse = {
      */
     updated_at: string;
 };
+
+export type GetAuthenticatedUserApiV1AuthMeGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/me';
+};
+
+export type GetAuthenticatedUserApiV1AuthMeGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: AuthenticatedUserResponse;
+};
+
+export type GetAuthenticatedUserApiV1AuthMeGetResponse = GetAuthenticatedUserApiV1AuthMeGetResponses[keyof GetAuthenticatedUserApiV1AuthMeGetResponses];
+
+export type ReceiveClerkWebhookApiV1WebhooksClerkPostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/webhooks/clerk';
+};
+
+export type ReceiveClerkWebhookApiV1WebhooksClerkPostResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type ReceiveClerkWebhookApiV1WebhooksClerkPostResponse = ReceiveClerkWebhookApiV1WebhooksClerkPostResponses[keyof ReceiveClerkWebhookApiV1WebhooksClerkPostResponses];
 
 export type GetHealthHealthGetData = {
     body?: never;

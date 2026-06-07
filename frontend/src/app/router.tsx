@@ -1,24 +1,101 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { SignedIn, SignedOut, useAuth } from "@clerk/react";
+import {
+  createBrowserRouter,
+  createMemoryRouter,
+  Navigate,
+  type RouteObject,
+} from "react-router-dom";
+import { CreateCompanyRoute } from "@/routes/auth/create-company";
+import { SignInRoute } from "@/routes/auth/sign-in";
 import { RootRoute } from "@/routes/root";
 import { WorkspaceRoute } from "@/routes/workspace";
 
-export const router = createBrowserRouter([
+function AuthLoadingState() {
+  return (
+    <div className="flex min-h-dvh items-center justify-center bg-[var(--xb-bg)] px-6">
+      <div className="rounded-[1.5rem] border border-[color:var(--xb-border)] bg-white px-6 py-5 text-sm text-[var(--xb-muted)] shadow-[var(--xb-shadow)]">
+        Checking your session...
+      </div>
+    </div>
+  );
+}
+
+function HomeRoute() {
+  const { isLoaded, isSignedIn, orgId } = useAuth();
+
+  if (!isLoaded) {
+    return <AuthLoadingState />;
+  }
+
+  return <Navigate replace to={!isSignedIn ? "/sign-in" : orgId ? "/workspace" : "/create-company"} />;
+}
+
+function ProtectedShellRoute() {
+  const { isLoaded, isSignedIn, orgId } = useAuth();
+
+  if (!isLoaded) {
+    return <AuthLoadingState />;
+  }
+
+  if (!isSignedIn) {
+    return <Navigate replace to="/sign-in" />;
+  }
+
+  if (!orgId) {
+    return <Navigate replace to="/create-company" />;
+  }
+
+  return (
+    <>
+      <SignedIn>
+        <RootRoute />
+      </SignedIn>
+      <SignedOut>
+        <Navigate replace to="/sign-in" />
+      </SignedOut>
+    </>
+  );
+}
+
+export const appRoutes: RouteObject[] = [
   {
-    path: "/",
-    element: <RootRoute />,
     children: [
       {
         index: true,
-        element: <Navigate replace to="/workspace" />,
+        element: <HomeRoute />,
       },
       {
-        path: "workspace",
-        element: <WorkspaceRoute />,
+        path: "sign-in",
+        element: <SignInRoute />,
+      },
+      {
+        path: "create-company",
+        element: <CreateCompanyRoute />,
+      },
+      {
+        element: <ProtectedShellRoute />,
+        children: [
+          {
+            path: "workspace",
+            element: <WorkspaceRoute />,
+          },
+        ],
       },
     ],
   },
-], {
+];
+
+const routerOptions = {
   future: {
     v7_startTransition: true,
   },
-});
+};
+
+export const router = createBrowserRouter(appRoutes, routerOptions);
+
+export function createTestRouter(initialEntries: string[]) {
+  return createMemoryRouter(appRoutes, {
+    future: routerOptions.future,
+    initialEntries,
+  });
+}
