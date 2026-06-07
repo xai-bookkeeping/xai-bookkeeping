@@ -23,10 +23,33 @@ vi.mock("@clerk/react", () => ({
     sessionId: "sess_workspace",
     userId: "user_workspace",
   }),
+  useOrganization: () => ({
+    isLoaded: true,
+    organization: {
+      id: "org_workspace",
+      name: "Workspace Company LLC",
+      publicMetadata: {
+        businessActivity: "General trading",
+      },
+    },
+  }),
   useOrganizationList: () => ({
     createOrganization: vi.fn(),
     isLoaded: true,
     setActive: vi.fn(),
+    userMemberships: {
+      data: [
+        {
+          organization: {
+            id: "org_workspace",
+            name: "Workspace Company LLC",
+            publicMetadata: {
+              businessActivity: "General trading",
+            },
+          },
+        },
+      ],
+    },
   }),
 }));
 
@@ -72,6 +95,18 @@ function createFetchMock() {
 
     if (url.pathname === "/api/health" && request.method === "GET") {
       return jsonResponse(healthResponse);
+    }
+
+    if (url.pathname === "/api/api/v1/companies/org_workspace" && request.method === "GET") {
+      return jsonResponse({
+        created_at: "2026-06-04T10:00:00Z",
+        id: "org_workspace",
+        image_url: null,
+        is_active: true,
+        name: "Workspace Company LLC",
+        slug: "workspace-company-llc",
+        updated_at: "2026-06-04T10:00:00Z",
+      });
     }
 
     if (url.pathname === "/api/workspace-probe/latest" && request.method === "GET") {
