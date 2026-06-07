@@ -1,8 +1,34 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router-dom";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { router } from "@/app/router";
+import { createTestRouter } from "@/app/router";
+
+const authState = {
+  isLoaded: true,
+  isSignedIn: true,
+  orgId: "org_workspace",
+};
+
+vi.mock("@clerk/react", () => ({
+  ClerkProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
+  SignIn: () => <div />,
+  SignedIn: ({ children }: { children: ReactNode }) => (authState.isSignedIn ? <>{children}</> : null),
+  SignedOut: ({ children }: { children: ReactNode }) => (!authState.isSignedIn ? <>{children}</> : null),
+  useAuth: () => ({
+    isLoaded: authState.isLoaded,
+    isSignedIn: authState.isSignedIn,
+    orgId: authState.orgId,
+    sessionId: "sess_workspace",
+    userId: "user_workspace",
+  }),
+  useOrganizationList: () => ({
+    createOrganization: vi.fn(),
+    isLoaded: true,
+    setActive: vi.fn(),
+  }),
+}));
 
 type ProbeRecord = {
   created_at: string;
@@ -44,11 +70,11 @@ function createFetchMock() {
     const request = input instanceof Request ? input : new Request(input, init);
     const url = new URL(request.url);
 
-    if (url.pathname === "/health" && request.method === "GET") {
+    if (url.pathname === "/api/health" && request.method === "GET") {
       return jsonResponse(healthResponse);
     }
 
-    if (url.pathname === "/workspace-probe/latest" && request.method === "GET") {
+    if (url.pathname === "/api/workspace-probe/latest" && request.method === "GET") {
       if (latestProbe) {
         return jsonResponse(latestProbe);
       }
@@ -61,7 +87,7 @@ function createFetchMock() {
       );
     }
 
-    if (url.pathname === "/workspace-probe" && request.method === "POST") {
+    if (url.pathname === "/api/workspace-probe" && request.method === "POST") {
       const body = (await request.json()) as { source: string; status?: "completed" };
 
       latestProbe = {
@@ -85,6 +111,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  cleanup();
   vi.unstubAllGlobals();
 });
 
@@ -102,7 +129,7 @@ test("renders the shell and refreshes the latest probe through the generated cli
 
   render(
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <RouterProvider router={createTestRouter(["/workspace"])} />
     </QueryClientProvider>,
   );
 
