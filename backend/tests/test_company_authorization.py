@@ -155,6 +155,28 @@ def test_company_route_rejects_foreign_company_access_with_403() -> None:
     assert response.json()["detail"] == "You do not have access to this company"
 
 
+def test_company_route_rejects_foreign_company_access_before_any_company_lookup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app = build_test_app()
+    app.dependency_overrides[get_authenticated_principal] = lambda: AuthenticatedPrincipal(
+        clerk_user_id="user_company_access",
+        session_id="sess_company_access",
+        active_organization_id="org_accessible",
+    )
+
+    async def unexpected_execute(*args, **kwargs):  # type: ignore[no-untyped-def]
+        raise AssertionError("foreign-company requests must fail before any company-scoped query runs")
+
+    monkeypatch.setattr("app.platform.company_access.AsyncSession.execute", unexpected_execute)
+
+    with TestClient(app) as client:
+        response = client.get("/api/v1/companies/org_forbidden")
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "You do not have access to this company"
+
+
 def test_company_and_membership_webhook_events_materialize_sync_and_tombstone_rows(monkeypatch) -> None:
     app = build_test_app()
 

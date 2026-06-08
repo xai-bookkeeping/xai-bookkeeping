@@ -268,6 +268,36 @@ test("switching companies clears cached data and refreshes the company-scoped sh
   });
 });
 
+test("switching companies shows the loading state before the next company renders", async () => {
+  let resolveSwitch: (() => void) | null = null;
+  setActive.mockImplementationOnce(
+    ({ organization }: { organization: string }) =>
+      new Promise<void>((resolve) => {
+        resolveSwitch = () => {
+          authState.orgId = organization;
+          resolve();
+        };
+      }),
+  );
+
+  renderWorkspace();
+
+  expect(await screen.findByRole("button", { name: /alpha trading llc/i })).toBeTruthy();
+
+  fireEvent.click(screen.getByRole("button", { name: /alpha trading llc/i }));
+  fireEvent.click(await screen.findByRole("menuitem", { name: /beta holdings llc/i }));
+
+  expect(await screen.findByRole("heading", { name: /loading company context/i })).toBeTruthy();
+  expect(screen.getAllByText(/switching company\.\.\./i).length).toBeGreaterThan(0);
+  expect(
+    screen.getByText(/clearing company-scoped data before the next company renders/i),
+  ).toBeTruthy();
+
+  resolveSwitch?.();
+
+  expect(await screen.findByText(/company switched\. showing records for beta holdings llc\./i)).toBeTruthy();
+});
+
 test("the switcher exposes an add-company action that routes into the existing creation flow", async () => {
   renderWorkspace();
 

@@ -259,3 +259,90 @@ def test_team_member_removal_writes_audit_rows_and_audit_reads_are_company_scope
         denied = client.get(f"/api/v1/companies/{company_id}/audit-events")
 
     assert denied.status_code == 403
+
+
+def test_team_invite_role_change_and_invite_revoke_write_company_scoped_audit_rows() -> None:
+    company_id = "org_audit_mutations"
+    seed_membership(
+        company_id=company_id,
+        clerk_user_id="user_owner",
+        email="owner@example.com",
+        role="owner",
+    )
+    seed_membership(
+        company_id=company_id,
+        clerk_user_id="user_member",
+        email="member@example.com",
+        role="viewer",
+    )
+
+    fake_clerk_client = FakeClerkOrganizationClient()
+    app = build_test_app()
+    app.dependency_overrides[get_authenticated_principal] = lambda: AuthenticatedPrincipal(
+        clerk_user_id="user_owner",
+        session_id="sess_owner",
+        active_organization_id=company_id,
+    )
+    app.dependency_overrides[get_clerk_organization_client] = lambda: fake_clerk_client
+
+    with TestClient(app) as client:
+        invite_response = client.post(
+            f"/api/v1/companies/{company_id}/team/invitations",
+            json={
+                "email_address": "new.accountant@example.com",
+                "message": "Please join the finance workspace.",
+                "role": "accountant",
+            },
+        )
+        assert invite_response.status_code == 201
+
+        role_update_response = client.patch(
+            f"/api/v1/companies/{company_id}/team/members/user_member",
+            json={"role": "admin"},
+        )
+        assert role_update_response.status_code == 200
+
+        revoke_response = client.delete(f"/api/v1/companies/{company_id}/team/invitations/inv_test")
+        assert revoke_response.status_code == 204
+
+    with SessionLocal() as session:
+        audit_events = session.scalars(
+            select(AuditEvent)
+            .where(AuditEvent.company_id == company_id)
+            .where(
+                AuditEvent.action.in_(
+                    ["team.member_invited", "team.role_updated", "team.invitation_revoked"]
+                )
+            )
+        ).all()
+
+    events_by_action = {event.action: event for event in audit_events}
+
+    assert set(events_by_action) == {
+        "team.member_invited",
+        "team.role_updated",
+        "team.invitation_revoked",
+    }
+    assert all(event.company_id == company_id for event in audit_events)
+    assert events_by_action["team.member_invited"].after_state == {
+        "created_at": None,
+        "email_address": "new.accountant@example.com",
+        "id": "inv_test",
+        "role": "accountant",
+        "role_description": "Can work with finance records, reports, and audit history.",
+        "role_label": "Accountant",
+        "status": "pending",
+    }
+    assert events_by_action["team.role_updated"].before_state == {
+        "email_address": "member@example.com",
+        "role": "viewer",
+    }
+    assert events_by_action["team.role_updated"].after_state == {
+        "email_address": "member@example.com",
+        "role": "admin",
+    }
+    assert events_by_action["team.invitation_revoked"].before_state == {"status": "pending"}
+    assert events_by_action["team.invitation_revoked"].after_state == {
+        "email_address": "pending@example.com",
+        "status": "revoked",
+    }
