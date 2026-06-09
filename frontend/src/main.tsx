@@ -1,12 +1,12 @@
-import { ClerkProvider } from "@clerk/react";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router-dom";
 import { router } from "@/app/router";
+import { ClerkProvider, resolveClerkPublishableKey } from "@/lib/clerk";
 import "@/styles.css";
 
-const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ?? "pk_test_missing";
+const clerkPublishableKey = resolveClerkPublishableKey(import.meta.env);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,7 +22,13 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ClerkProvider publishableKey={clerkPublishableKey}>
+    <ClerkProvider
+      publishableKey={clerkPublishableKey}
+      signInFallbackRedirectUrl="/create-company"
+      signInUrl="/sign-in"
+      signUpFallbackRedirectUrl="/create-company"
+      signUpUrl="/sign-up"
+    >
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
       </QueryClientProvider>

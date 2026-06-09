@@ -1,12 +1,13 @@
-import { SignedIn, SignedOut, useAuth } from "@clerk/react";
 import {
   createBrowserRouter,
   createMemoryRouter,
   Navigate,
   type RouteObject,
 } from "react-router-dom";
+import { useAuth } from "@/lib/clerk";
 import { CreateCompanyRoute } from "@/routes/auth/create-company";
 import { SignInRoute } from "@/routes/auth/sign-in";
+import { SignUpRoute } from "@/routes/auth/sign-up";
 import { RootRoute } from "@/routes/root";
 import { WorkspaceRoute } from "@/routes/workspace";
 import { AuditRoute } from "@/routes/workspace/audit";
@@ -24,13 +25,13 @@ function AuthLoadingState() {
 }
 
 function HomeRoute() {
-  const { isLoaded, isSignedIn, orgId } = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
 
   if (!isLoaded) {
     return <AuthLoadingState />;
   }
 
-  return <Navigate replace to={!isSignedIn ? "/sign-in" : orgId ? "/workspace" : "/create-company"} />;
+  return <Navigate replace to={!isSignedIn ? "/sign-in" : "/create-company"} />;
 }
 
 function ProtectedShellRoute() {
@@ -48,16 +49,7 @@ function ProtectedShellRoute() {
     return <Navigate replace to="/create-company" />;
   }
 
-  return (
-    <>
-      <SignedIn>
-        <RootRoute />
-      </SignedIn>
-      <SignedOut>
-        <Navigate replace to="/sign-in" />
-      </SignedOut>
-    </>
-  );
+  return <RootRoute />;
 }
 
 export const appRoutes: RouteObject[] = [
@@ -68,8 +60,12 @@ export const appRoutes: RouteObject[] = [
         element: <HomeRoute />,
       },
       {
-        path: "sign-in",
+        path: "sign-in/*",
         element: <SignInRoute />,
+      },
+      {
+        path: "sign-up/*",
+        element: <SignUpRoute />,
       },
       {
         path: "create-company",

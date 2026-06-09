@@ -83,6 +83,25 @@ export type AuditEventResponse = {
 };
 
 /**
+ * AuthBootstrapResponse
+ */
+export type AuthBootstrapResponse = {
+    /**
+     * Active Organization Id
+     */
+    active_organization_id?: string | null;
+    company?: CompanyResponse | null;
+    /**
+     * Membership Role
+     */
+    membership_role?: string | null;
+    /**
+     * Status
+     */
+    status: 'no_active_company' | 'company_context_pending' | 'ready';
+};
+
+/**
  * AuthenticatedUserResponse
  */
 export type AuthenticatedUserResponse = {
@@ -522,6 +541,22 @@ export type WorkspaceProbeResponse = {
      */
     updated_at: string;
 };
+
+export type GetAuthBootstrapApiV1AuthBootstrapGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/bootstrap';
+};
+
+export type GetAuthBootstrapApiV1AuthBootstrapGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: AuthBootstrapResponse;
+};
+
+export type GetAuthBootstrapApiV1AuthBootstrapGetResponse = GetAuthBootstrapApiV1AuthBootstrapGetResponses[keyof GetAuthBootstrapApiV1AuthBootstrapGetResponses];
 
 export type GetAuthenticatedUserApiV1AuthMeGetData = {
     body?: never;
