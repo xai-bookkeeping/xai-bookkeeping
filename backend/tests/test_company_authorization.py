@@ -177,6 +177,26 @@ def test_company_route_rejects_foreign_company_access_before_any_company_lookup(
     assert response.json()["detail"] == "You do not have access to this company"
 
 
+def test_company_route_marks_same_org_missing_local_rows_as_company_context_pending() -> None:
+    company_id = "org_pending_company"
+    app = build_test_app()
+    app.dependency_overrides[get_authenticated_principal] = lambda: AuthenticatedPrincipal(
+        clerk_user_id="user_pending_company",
+        session_id="sess_pending_company",
+        active_organization_id=company_id,
+    )
+
+    with TestClient(app) as client:
+        response = client.get(f"/api/v1/companies/{company_id}")
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == {
+        "code": "company_context_pending",
+        "company_id": company_id,
+        "message": "Company context is still materializing. Please try again.",
+    }
+
+
 def test_company_and_membership_webhook_events_materialize_sync_and_tombstone_rows(monkeypatch) -> None:
     app = build_test_app()
 

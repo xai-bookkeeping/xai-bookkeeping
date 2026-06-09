@@ -15,6 +15,10 @@ from app.db.models.user import User
 from app.db.session import build_engine
 from app.main import create_app
 from app.platform.auth import AuthenticatedPrincipal
+from app.platform.clerk_organizations import (
+    ClerkOrganizationReadinessSnapshot,
+    get_clerk_organization_client,
+)
 
 DATABASE_URL = "postgresql+psycopg://xai_books:change-me@postgres:5432/xai_books"
 ENGINE = build_engine(DATABASE_URL)
@@ -122,6 +126,94 @@ def test_auth_me_returns_local_user_for_authenticated_principal() -> None:
     assert response.json()["clerk_user_id"] == "user_test_auth_me"
     assert response.json()["primary_email_address"] == "owner@example.com"
     assert response.json()["is_active"] is True
+
+
+def test_auth_bootstrap_reports_no_active_company_when_user_has_no_active_org() -> None:
+    app = build_test_app()
+    app.dependency_overrides[get_authenticated_principal] = lambda: AuthenticatedPrincipal(
+        clerk_user_id="user_bootstrap_none",
+        session_id="sess_bootstrap_none",
+        active_organization_id=None,
+    )
+
+    with TestClient(app) as client:
+        response = client.get("/api/v1/auth/bootstrap")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "no_active_company",
+        "active_organization_id": None,
+        "company": None,
+        "membership_role": None,
+    }
+
+
+def test_auth_bootstrap_materializes_ready_company_context_from_clerk_snapshot() -> None:
+    company_id = "org_bootstrap_ready"
+    clerk_user_id = "user_bootstrap_ready"
+    app = build_test_app()
+    app.dependency_overrides[get_authenticated_principal] = lambda: AuthenticatedPrincipal(
+        clerk_user_id=clerk_user_id,
+        session_id="sess_bootstrap_ready",
+        active_organization_id=company_id,
+    )
+
+    class FakeClerkClient:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, str]] = []
+
+        def get_principal_company_snapshot(
+            self,
+            *,
+            company_id: str,
+            clerk_user_id: str,
+        ) -> ClerkOrganizationReadinessSnapshot | None:
+            self.calls.append((company_id, clerk_user_id))
+            return ClerkOrganizationReadinessSnapshot(
+                organization={
+                    "id": company_id,
+                    "name": "Bootstrap Ready LLC",
+                    "slug": "bootstrap-ready-llc",
+                    "image_url": "https://img.example.com/bootstrap.png",
+                },
+                membership={
+                    "id": "mem_bootstrap_ready",
+                    "organization": {"id": company_id},
+                    "role": "owner",
+                },
+            )
+
+    fake_clerk_client = FakeClerkClient()
+    app.dependency_overrides[get_clerk_organization_client] = lambda: fake_clerk_client
+
+    with TestClient(app) as client:
+        response = client.get("/api/v1/auth/bootstrap")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "ready"
+    assert payload["active_organization_id"] == company_id
+    assert payload["membership_role"] == "owner"
+    assert payload["company"]["id"] == company_id
+    assert payload["company"]["name"] == "Bootstrap Ready LLC"
+    assert fake_clerk_client.calls == [(company_id, clerk_user_id)]
+
+    with SessionLocal() as session:
+        user = session.query(User).filter(User.clerk_user_id == clerk_user_id).one()
+        company = session.get(Company, company_id)
+        membership = (
+            session.query(CompanyMembership)
+            .filter(CompanyMembership.company_id == company_id)
+            .filter(CompanyMembership.user_id == user.id)
+            .one()
+        )
+
+    assert user.is_active is True
+    assert company is not None
+    assert company.name == "Bootstrap Ready LLC"
+    assert company.slug == "bootstrap-ready-llc"
+    assert membership.role == "owner"
+    assert membership.status == "active"
 
 
 def test_clerk_user_webhook_events_upsert_and_deactivate_shadow_rows(monkeypatch) -> None:

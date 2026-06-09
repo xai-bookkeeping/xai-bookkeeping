@@ -76,6 +76,19 @@ def _extract_string(value: Any) -> str | None:
     return value if isinstance(value, str) and value else None
 
 
+def _dump_clerk_model(value: Any) -> dict[str, Any]:
+    if isinstance(value, Mapping):
+        return dict(value)
+
+    model_dump = getattr(value, "model_dump", None)
+    if callable(model_dump):
+        dumped = model_dump()
+        if isinstance(dumped, Mapping):
+            return dict(dumped)
+
+    raise TypeError("Unsupported Clerk payload type for synchronization")
+
+
 def _extract_organization_id(membership_data: Mapping[str, Any]) -> str | None:
     organization = membership_data.get("organization")
     if isinstance(organization, Mapping):
@@ -230,6 +243,8 @@ async def sync_clerk_company_membership_event(
         user = User(clerk_user_id=clerk_user_id, is_active=True)
         session.add(user)
         await session.flush()
+    elif event_type != "organizationMembership.deleted":
+        user.is_active = True
 
     membership = await _get_membership_by_clerk_id(session, clerk_membership_id)
     if membership is None:
@@ -263,3 +278,39 @@ async def sync_clerk_event(session: AsyncSession, event: Mapping[str, Any]) -> N
     await sync_clerk_user_event(session, event)
     await sync_clerk_company_event(session, event)
     await sync_clerk_company_membership_event(session, event)
+
+
+async def sync_clerk_organization_materialization(
+    session: AsyncSession,
+    *,
+    clerk_user_id: str,
+    organization: Any,
+    membership: Any | None,
+) -> None:
+    await sync_clerk_event(
+        session,
+        {
+            "type": "organization.updated",
+            "data": _dump_clerk_model(organization),
+        },
+    )
+
+    if membership is None:
+        return
+
+    membership_payload = _dump_clerk_model(membership)
+    public_user_data = membership_payload.get("public_user_data")
+    if not isinstance(public_user_data, Mapping):
+        public_user_data = {}
+    else:
+        public_user_data = dict(public_user_data)
+    public_user_data.setdefault("user_id", clerk_user_id)
+    membership_payload["public_user_data"] = public_user_data
+
+    await sync_clerk_event(
+        session,
+        {
+            "type": "organizationMembership.updated",
+            "data": membership_payload,
+        },
+    )

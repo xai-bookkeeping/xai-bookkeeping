@@ -2,6 +2,10 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 from clerk_backend_api import Clerk
+from clerk_backend_api.models.organization import Organization as ClerkOrganization
+from clerk_backend_api.models.organizationmembership import (
+    OrganizationMembership as ClerkOrganizationMembership,
+)
 from fastapi import Depends
 
 from app.core.config import Settings, get_settings
@@ -14,6 +18,12 @@ class ClerkInvitationRecord:
     id: str
     role: str
     status: str
+
+
+@dataclass(frozen=True)
+class ClerkOrganizationReadinessSnapshot:
+    organization: ClerkOrganization
+    membership: ClerkOrganizationMembership
 
 
 class ClerkOrganizationClient:
@@ -93,6 +103,26 @@ class ClerkOrganizationClient:
         self._client.organization_memberships.delete(
             organization_id=company_id,
             user_id=clerk_user_id,
+        )
+
+    def get_principal_company_snapshot(
+        self,
+        *,
+        company_id: str,
+        clerk_user_id: str,
+    ) -> ClerkOrganizationReadinessSnapshot | None:
+        organization = self._client.organizations.get(organization_id=company_id)
+        memberships = self._client.organization_memberships.list(
+            organization_id=company_id,
+            user_id=[clerk_user_id],
+            limit=1,
+        ).data
+        if not memberships:
+            return None
+
+        return ClerkOrganizationReadinessSnapshot(
+            organization=organization,
+            membership=memberships[0],
         )
 
 
