@@ -75,6 +75,11 @@ type BootstrapQueryError = {
   status: number | null;
 };
 
+type QueryError = {
+  message: string;
+  status: number | null;
+};
+
 function getBootstrapErrorMessage(statusCode: number | null): string {
   if (statusCode === 401 || statusCode === 403) {
     return "Your session needs to be refreshed before we can open this workspace.";
@@ -85,6 +90,14 @@ function getBootstrapErrorMessage(statusCode: number | null): string {
   }
 
   return "We could not reach the backend. Check your connection and try again.";
+}
+
+function getCompanyLookupErrorMessage(statusCode: number | null): string {
+  if (statusCode !== null && statusCode >= 500) {
+    return "The backend is temporarily unavailable. Try again in a moment.";
+  }
+
+  return "We could not load this company workspace. Check your connection and try again.";
 }
 
 function getOrganizationBusinessActivity(publicMetadata: unknown): string | null {
@@ -175,7 +188,11 @@ export function RootRoute() {
           return { kind: "forbidden" } as const;
         }
 
-        throw response.error;
+        const status = response.response?.status ?? null;
+        throw {
+          message: getCompanyLookupErrorMessage(status),
+          status,
+        } satisfies QueryError;
       }
 
       return {
@@ -185,6 +202,8 @@ export function RootRoute() {
     },
     staleTime: 5_000,
   });
+
+  const activeCompanyError = activeCompanyQuery.error as QueryError | null;
 
   if (bootstrapQuery.isError && bootstrapError) {
     return (
@@ -214,6 +233,30 @@ export function RootRoute() {
                   Back to sign in
                 </Link>
               ) : null}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeCompanyQuery.isError && activeCompanyError) {
+    return (
+      <div className="min-h-dvh bg-[var(--xb-bg)] px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[42rem]">
+          <Card className="border-[color:var(--xb-border)] bg-white shadow-[var(--xb-shadow)]">
+            <CardHeader>
+              <Badge tone="warning" className="w-fit">
+                Company unavailable
+              </Badge>
+              <CardTitle>We could not load this company workspace</CardTitle>
+              <CardDescription>{activeCompanyError.message}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-3">
+              <Button onClick={() => void activeCompanyQuery.refetch()}>Retry company access</Button>
+              <Button variant="secondary" onClick={() => setCompanySwitcherOpen(true)}>
+                Switch company
+              </Button>
             </CardContent>
           </Card>
         </div>

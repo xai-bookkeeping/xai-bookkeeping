@@ -361,6 +361,20 @@ test("shows the forbidden company state when bootstrap is ready but the company 
   );
 });
 
+test("shows a retryable company access error when the company lookup fails", async () => {
+  companyResponses.set("org_workspace", {
+    detail: "Service unavailable",
+    status: 503,
+  });
+
+  renderWorkspace();
+
+  expect(await screen.findByRole("heading", { name: /we could not load this company workspace/i })).toBeTruthy();
+  expect(screen.getByRole("button", { name: /retry company access/i })).toBeTruthy();
+  expect(screen.getByRole("button", { name: /switch company/i })).toBeTruthy();
+  expect(screen.queryByRole("heading", { name: /workspace probe/i })).toBeNull();
+});
+
 test("shows an auth-required bootstrap state when the bootstrap contract returns 401", async () => {
   bootstrapScenario = "auth_required";
 
