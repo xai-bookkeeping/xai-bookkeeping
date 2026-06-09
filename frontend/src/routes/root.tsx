@@ -170,6 +170,9 @@ export function RootRoute() {
   const organizationName = organization?.name ?? null;
   const activeCompanyId = bootstrapQuery.data?.active_organization_id ?? orgId ?? null;
   const shouldQueryActiveCompany = bootstrapStatus === "ready" && Boolean(activeCompanyId);
+  const fallbackCompanyName = organizationName ?? "Company access unavailable";
+  const fallbackCompanySubtitle =
+    organizationBusinessActivity ?? "Switch to an authorized company or ask an admin for access.";
 
   const activeCompanyQuery = useQuery<CompanyLookupState>({
     enabled: shouldQueryActiveCompany,
@@ -257,6 +260,14 @@ export function RootRoute() {
               <Button variant="secondary" onClick={() => setCompanySwitcherOpen(true)}>
                 Switch company
               </Button>
+              <CompanySwitcher
+                activeCompanyId={activeCompanyId}
+                activeCompanyName={fallbackCompanyName}
+                activeCompanySubtitle={fallbackCompanySubtitle}
+                isOpen={companySwitcherOpen}
+                onOpenChange={setCompanySwitcherOpen}
+                onSwitchingChange={setIsSwitchingCompany}
+              />
             </CardContent>
           </Card>
         </div>

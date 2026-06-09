@@ -371,7 +371,9 @@ test("shows a retryable company access error when the company lookup fails", asy
 
   expect(await screen.findByRole("heading", { name: /we could not load this company workspace/i })).toBeTruthy();
   expect(screen.getByRole("button", { name: /retry company access/i })).toBeTruthy();
-  expect(screen.getByRole("button", { name: /switch company/i })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: /switch company/i }));
+  expect(await screen.findByRole("menu", { name: /switch company/i })).toBeTruthy();
+  expect(screen.getByRole("menuitem", { name: /add a company/i })).toBeTruthy();
   expect(screen.queryByRole("heading", { name: /workspace probe/i })).toBeNull();
 });
 
