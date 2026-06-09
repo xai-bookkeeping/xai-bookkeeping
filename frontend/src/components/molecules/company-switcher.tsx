@@ -101,7 +101,7 @@ export function CompanySwitcher({
 
   function handleAddCompany() {
     onOpenChange(false);
-    navigate("/create-company");
+    navigate("/create-company?intent=new");
   }
 
   return (
@@ -136,7 +136,9 @@ export function CompanySwitcher({
       </button>
 
       {feedback ? (
-        <p className="mt-2 text-xs text-[var(--xb-muted)]">{feedback}</p>
+        <p aria-live="polite" role="status" className="mt-2 text-xs text-[var(--xb-muted)]">
+          {feedback}
+        </p>
       ) : null}
 
       {isOpen ? (

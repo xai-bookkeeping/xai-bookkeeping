@@ -12,6 +12,8 @@ type OrganizationRecord = {
   name: string;
 };
 
+type BootstrapStatus = "company_context_pending" | "ready";
+
 const organizations: OrganizationRecord[] = [
   {
     businessActivity: "General trading",
@@ -38,6 +40,10 @@ const setActive = vi.fn(async ({ organization }: { organization: string }) => {
 });
 
 const createOrganization = vi.fn();
+const bootstrapStatuses = new Map<string, BootstrapStatus>([
+  ["org_alpha", "ready"],
+  ["org_beta", "company_context_pending"],
+]);
 
 vi.mock("@clerk/react", () => ({
   ClerkProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -167,6 +173,8 @@ beforeEach(() => {
   authState.isLoaded = true;
   authState.isSignedIn = true;
   authState.orgId = organizations[0].id;
+  bootstrapStatuses.set("org_alpha", "ready");
+  bootstrapStatuses.set("org_beta", "company_context_pending");
   latestProbe = null;
   capturedRequests.length = 0;
   setActive.mockClear();
@@ -191,11 +199,50 @@ beforeEach(() => {
         pathname: url.pathname,
       });
 
-      if (url.pathname === "/api/health" && request.method === "GET") {
+      if (url.pathname === "/health" && request.method === "GET") {
         return jsonResponse(healthResponse);
       }
 
-      if (url.pathname === "/api/workspace-probe/latest" && request.method === "GET") {
+      if (url.pathname === "/api/v1/auth/bootstrap" && request.method === "GET") {
+        if (!authState.orgId) {
+          return jsonResponse({
+            active_organization_id: null,
+            company: null,
+            membership_role: null,
+            status: "no_active_company",
+          });
+        }
+
+        const status = bootstrapStatuses.get(authState.orgId) ?? "ready";
+        if (status === "company_context_pending") {
+          return jsonResponse({
+            active_organization_id: authState.orgId,
+            company: null,
+            membership_role: null,
+            status: "company_context_pending",
+          });
+        }
+
+        return jsonResponse({
+          active_organization_id: authState.orgId,
+          company:
+            companyResponses.get(authState.orgId) ??
+            ({
+              businessActivity: "General trading",
+              created_at: "2026-06-07T10:00:00Z",
+              id: authState.orgId,
+              image_url: null,
+              is_active: true,
+              name: "Ready Company LLC",
+              slug: "ready-company-llc",
+              updated_at: "2026-06-07T10:00:00Z",
+            } as const),
+          membership_role: "owner",
+          status: "ready",
+        });
+      }
+
+      if (url.pathname === "/workspace-probe/latest" && request.method === "GET") {
         if (latestProbe) {
           return jsonResponse(latestProbe);
         }
@@ -203,7 +250,7 @@ beforeEach(() => {
         return jsonResponse({ detail: "No workspace probe runs have been recorded" }, 404);
       }
 
-      if (url.pathname === "/api/workspace-probe" && request.method === "POST") {
+      if (url.pathname === "/workspace-probe" && request.method === "POST") {
         latestProbe = {
           created_at: "2026-06-07T10:00:00Z",
           id: 51,
@@ -214,7 +261,7 @@ beforeEach(() => {
         return jsonResponse(latestProbe, 201);
       }
 
-      if (url.pathname.startsWith("/api/api/v1/companies/") && request.method === "GET") {
+      if (url.pathname.startsWith("/api/v1/companies/") && request.method === "GET") {
         const companyId = url.pathname.split("/").at(-1) ?? "";
         const company = companyResponses.get(companyId);
 
@@ -241,6 +288,7 @@ afterEach(() => {
 
 test("switching companies clears cached data and refreshes the company-scoped shell", async () => {
   const { queryClient } = renderWorkspace();
+  bootstrapStatuses.set("org_beta", "ready");
 
   queryClient.setQueryData(["stale-company-data"], { companyId: "org_alpha" });
 
@@ -262,7 +310,7 @@ test("switching companies clears cached data and refreshes the company-scoped sh
   await waitFor(() => {
     expect(
       capturedRequests.some(
-        (request) => request.method === "GET" && request.pathname === "/api/api/v1/companies/org_beta",
+        (request) => request.method === "GET" && request.pathname === "/api/v1/companies/org_beta",
       ),
     ).toBe(true);
   });
@@ -307,16 +355,34 @@ test("the switcher exposes an add-company action that routes into the existing c
   expect(await screen.findByRole("heading", { name: /create a company workspace/i })).toBeTruthy();
 });
 
-test("a company-scoped 403 renders a calm permission denied state instead of dead shell content", async () => {
-  companyResponses.set("org_alpha", {
-    detail: "You do not have access to this company",
-    status: 403,
+test("switching to a pending company clears stale cache data and lands in the setup handoff", async () => {
+  const { queryClient } = renderWorkspace();
+
+  queryClient.setQueryData(["stale-company-data"], { companyId: "org_alpha" });
+
+  expect(await screen.findByRole("button", { name: /alpha trading llc/i })).toBeTruthy();
+
+  fireEvent.click(screen.getByRole("button", { name: /alpha trading llc/i }));
+  fireEvent.click(await screen.findByRole("menuitem", { name: /beta holdings llc/i }));
+
+  await waitFor(() => {
+    expect(setActive).toHaveBeenCalledWith({ organization: "org_beta" });
   });
 
-  renderWorkspace();
+  await waitFor(() => {
+    expect(queryClient.getQueryData(["stale-company-data"])).toBeUndefined();
+  });
 
-  expect(await screen.findByRole("heading", { name: /you do not have access to this company/i })).toBeTruthy();
-  expect(screen.getByText(/switch to an authorized company or ask an admin for access/i)).toBeTruthy();
-  expect(screen.getByRole("button", { name: /switch company/i })).toBeTruthy();
-  expect(screen.getByRole("link", { name: /back to workspace/i })).toBeTruthy();
+  expect(await screen.findByText(/company switched\. showing records for beta holdings llc\./i)).toBeTruthy();
+  expect(await screen.findByRole("heading", { name: /we're finishing your company workspace/i })).toBeTruthy();
+  expect(
+    capturedRequests.some(
+      (request) => request.method === "GET" && request.pathname === "/api/v1/companies/org_beta",
+    ),
+  ).toBe(false);
+  expect(
+    capturedRequests.filter(
+      (request) => request.method === "GET" && request.pathname === "/api/v1/auth/bootstrap",
+    ).length,
+  ).toBeGreaterThan(1);
 });
