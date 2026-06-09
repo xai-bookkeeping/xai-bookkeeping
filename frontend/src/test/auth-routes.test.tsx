@@ -165,6 +165,18 @@ vi.mock("@clerk/react", () => ({
     sessionId: authState.isSignedIn ? "sess_test" : null,
     userId: authState.isSignedIn ? "user_test" : null,
   }),
+  useOrganization: () => ({
+    isLoaded: authState.isLoaded,
+    organization: authState.orgId
+      ? {
+          id: authState.orgId,
+          name: companyResponses.get(authState.orgId)?.name ?? "Ready Company LLC",
+          publicMetadata: {
+            businessActivity: "General trading",
+          },
+        }
+      : null,
+  }),
   useOrganizationList: () => ({
     createOrganization,
     isLoaded: authState.isLoaded && authState.isSignedIn,
@@ -379,6 +391,7 @@ test("create-company invokes Clerk organization creation and stays on the setup 
 test("protected workspace traffic stays on the same-origin /api contract without a bearer token helper", async () => {
   authState.isSignedIn = true;
   authState.orgId = "org_test";
+  bootstrapScenario = "ready";
 
   renderRoute("/workspace");
 
@@ -389,6 +402,8 @@ test("protected workspace traffic stays on the same-origin /api contract without
   });
 
   expect(capturedRequests.some((request) => request.pathname.startsWith("/api/v1/"))).toBe(true);
-  expect(capturedRequests.some((request) => request.pathname === "/health")).toBe(true);
+  await waitFor(() => {
+    expect(capturedRequests.some((request) => request.pathname === "/health")).toBe(true);
+  });
   expect(capturedRequests.every((request) => request.headers.get("authorization") === null)).toBe(true);
 });

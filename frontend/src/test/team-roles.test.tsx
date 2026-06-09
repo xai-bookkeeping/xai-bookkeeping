@@ -169,21 +169,30 @@ beforeEach(() => {
   authState.orgId = "org_workspace";
   teamDirectory = defaultTeamDirectory();
 
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const request = input instanceof Request ? input : new Request(input, init);
-      const url = new URL(request.url, "http://localhost:5173");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const request = input instanceof Request ? input : new Request(input, init);
+        const url = new URL(request.url, "http://localhost:5173");
 
-      if (url.pathname === "/api/api/v1/companies/org_workspace" && request.method === "GET") {
-        return jsonResponse(companyResponse);
-      }
+        if (url.pathname === "/api/v1/auth/bootstrap" && request.method === "GET") {
+          return jsonResponse({
+            active_organization_id: "org_workspace",
+            company: companyResponse,
+            membership_role: "owner",
+            status: "ready",
+          });
+        }
 
-      if (url.pathname === "/api/api/v1/companies/org_workspace/team" && request.method === "GET") {
+        if (url.pathname === "/api/v1/companies/org_workspace" && request.method === "GET") {
+          return jsonResponse(companyResponse);
+        }
+
+      if (url.pathname === "/api/v1/companies/org_workspace/team" && request.method === "GET") {
         return jsonResponse(teamDirectory);
       }
 
-      if (url.pathname === "/api/api/v1/companies/org_workspace/team/invitations" && request.method === "POST") {
+      if (url.pathname === "/api/v1/companies/org_workspace/team/invitations" && request.method === "POST") {
         const body = (await request.json()) as {
           email_address: string;
           message?: string | null;
@@ -209,7 +218,7 @@ beforeEach(() => {
       }
 
       if (
-        url.pathname === "/api/api/v1/companies/org_workspace/team/members/user_member" &&
+        url.pathname === "/api/v1/companies/org_workspace/team/members/user_member" &&
         request.method === "PATCH"
       ) {
         const body = (await request.json()) as { role: "accountant" | "admin" | "owner" | "viewer" };
@@ -230,7 +239,7 @@ beforeEach(() => {
       }
 
       if (
-        url.pathname === "/api/api/v1/companies/org_workspace/team/invitations/inv_pending_1" &&
+        url.pathname === "/api/v1/companies/org_workspace/team/invitations/inv_pending_1" &&
         request.method === "DELETE"
       ) {
         teamDirectory = {
@@ -241,7 +250,7 @@ beforeEach(() => {
       }
 
       if (
-        url.pathname === "/api/api/v1/companies/org_workspace/team/members/user_member" &&
+        url.pathname === "/api/v1/companies/org_workspace/team/members/user_member" &&
         request.method === "DELETE"
       ) {
         teamDirectory = {

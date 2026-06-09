@@ -1,9 +1,13 @@
 import { useState } from "react";
-import { useAuth } from "@clerk/react";
+import { useAuth, useOrganization } from "@clerk/react";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { getCompanyApiV1CompaniesCompanyIdGet, type CompanyResponse } from "@/api";
+import {
+  getAuthBootstrapApiV1AuthBootstrapGet,
+  getCompanyApiV1CompaniesCompanyIdGet,
+  type CompanyResponse,
+} from "@/api";
 import { CompanySwitcher } from "@/components/molecules/company-switcher";
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/components/ui";
 import { apiClient } from "@/lib/api-runtime";
@@ -46,35 +50,80 @@ function ShellNavLink({
   );
 }
 
-type CompanyShellState = "forbidden" | "loading" | "ready";
+type CompanyShellState = "forbidden" | "loading" | "ready" | "setup";
+
+type CompanyLookupState =
+  | {
+      company: CompanyResponse;
+      kind: "ready";
+    }
+  | {
+      kind: "forbidden";
+    };
+
+function getOrganizationBusinessActivity(publicMetadata: unknown): string | null {
+  if (typeof publicMetadata !== "object" || publicMetadata === null) {
+    return null;
+  }
+
+  const metadata = publicMetadata as { businessActivity?: unknown };
+
+  return typeof metadata.businessActivity === "string" ? metadata.businessActivity : null;
+}
 
 export type RootRouteContext = {
   activeCompany: CompanyResponse | null;
   companyShellState: CompanyShellState;
   isSwitchingCompany: boolean;
   openCompanySwitcher: () => void;
+  retryCompanyAccess: () => void;
 };
 
 export function RootRoute() {
-  const { orgId } = useAuth();
+  const { isLoaded, orgId } = useAuth();
+  const { organization } = useOrganization();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [companySwitcherOpen, setCompanySwitcherOpen] = useState(false);
   const [isSwitchingCompany, setIsSwitchingCompany] = useState(false);
 
-  const activeCompanyQuery = useQuery({
-    enabled: Boolean(orgId),
-    queryKey: ["active-company", orgId],
+  const bootstrapQuery = useQuery({
+    enabled: isLoaded && Boolean(orgId),
+    queryKey: ["auth-bootstrap", orgId],
+    queryFn: async () => {
+      const response = await getAuthBootstrapApiV1AuthBootstrapGet({
+        client: apiClient,
+        responseStyle: "fields",
+      });
+
+      if ("error" in response && response.error) {
+        throw response.error;
+      }
+
+      return response.data ?? null;
+    },
+    staleTime: 5_000,
+  });
+
+  const bootstrapStatus = bootstrapQuery.data?.status;
+  const organizationBusinessActivity = getOrganizationBusinessActivity(organization?.publicMetadata);
+  const organizationName = organization?.name ?? null;
+  const activeCompanyId = bootstrapQuery.data?.active_organization_id ?? orgId ?? null;
+  const shouldQueryActiveCompany = bootstrapStatus === "ready" && Boolean(activeCompanyId);
+
+  const activeCompanyQuery = useQuery<CompanyLookupState>({
+    enabled: shouldQueryActiveCompany,
+    queryKey: ["active-company", activeCompanyId],
     queryFn: async () => {
       const response = await getCompanyApiV1CompaniesCompanyIdGet({
         client: apiClient,
         path: {
-          company_id: orgId ?? "",
+          company_id: activeCompanyId ?? "",
         },
         responseStyle: "fields",
       });
 
       if ("error" in response && response.error) {
-        if (response.response?.status === 403) {
+        if (response.response?.status === 403 || response.response?.status === 404) {
           return { kind: "forbidden" } as const;
         }
 
@@ -82,19 +131,36 @@ export function RootRoute() {
       }
 
       return {
-        company: response.data ?? null,
         kind: "ready",
+        company: response.data as CompanyResponse,
       } as const;
     },
     staleTime: 5_000,
   });
 
-  const companyShellState: CompanyShellState =
-    isSwitchingCompany || activeCompanyQuery.isLoading || !orgId
-      ? "loading"
-      : activeCompanyQuery.data?.kind === "forbidden"
-        ? "forbidden"
-        : "ready";
+  const companyShellState: CompanyShellState = (() => {
+    if (isSwitchingCompany || !isLoaded || !orgId || bootstrapQuery.isLoading || bootstrapQuery.isFetching) {
+      return "loading";
+    }
+
+    if (bootstrapStatus === "no_active_company" || bootstrapStatus === "company_context_pending") {
+      return "setup";
+    }
+
+    if (activeCompanyQuery.data?.kind === "forbidden") {
+      return "forbidden";
+    }
+
+    if (activeCompanyQuery.data?.kind === "ready") {
+      return "ready";
+    }
+
+    if (activeCompanyQuery.isLoading || activeCompanyQuery.isFetching) {
+      return "loading";
+    }
+
+    return "loading";
+  })();
 
   const activeCompany =
     companyShellState === "ready" && activeCompanyQuery.data?.kind === "ready"
@@ -103,16 +169,25 @@ export function RootRoute() {
 
   const activeCompanyName =
     activeCompany?.name ??
-    (companyShellState === "forbidden" ? "Company access unavailable" : "Loading company context");
+    organizationName ??
+    (companyShellState === "forbidden"
+      ? "Company access unavailable"
+      : companyShellState === "setup"
+        ? "Preparing company workspace"
+        : "Loading company context");
   const activeCompanySubtitle =
-    companyShellState === "forbidden"
-      ? "Switch to an authorized company"
-      : activeCompany?.slug
-        ? activeCompany.slug.replaceAll("-", " ")
-        : "UAE company workspace";
+    activeCompany?.slug
+      ? activeCompany.slug.replaceAll("-", " ")
+      : companyShellState === "forbidden"
+        ? "Switch to an authorized company or ask an admin for access."
+        : companyShellState === "setup"
+          ? "We are confirming your company setup before opening the workspace."
+          : organizationBusinessActivity ?? "UAE company workspace";
   const companyBadge =
     companyShellState === "forbidden"
       ? { label: "Denied", tone: "warning" as const }
+      : companyShellState === "setup"
+        ? { label: "Setup", tone: "accent" as const }
       : companyShellState === "loading"
         ? { label: "Loading", tone: "default" as const }
         : { label: "Live", tone: "success" as const };
@@ -248,6 +323,9 @@ export function RootRoute() {
                     companyShellState,
                     isSwitchingCompany,
                     openCompanySwitcher: () => setCompanySwitcherOpen(true),
+                    retryCompanyAccess: () => {
+                      void bootstrapQuery.refetch();
+                    },
                   } satisfies RootRouteContext}
                 />
               </div>

@@ -158,21 +158,30 @@ beforeEach(() => {
     ],
   };
 
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const request = input instanceof Request ? input : new Request(input, init);
-      const url = new URL(request.url, "http://localhost:5173");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const request = input instanceof Request ? input : new Request(input, init);
+        const url = new URL(request.url, "http://localhost:5173");
 
-      if (url.pathname === "/api/api/v1/companies/org_workspace" && request.method === "GET") {
-        return jsonResponse(companyResponse);
-      }
+        if (url.pathname === "/api/v1/auth/bootstrap" && request.method === "GET") {
+          return jsonResponse({
+            active_organization_id: "org_workspace",
+            company: companyResponse,
+            membership_role: "owner",
+            status: "ready",
+          });
+        }
 
-      if (url.pathname === "/api/api/v1/companies/org_workspace/settings" && request.method === "GET") {
+        if (url.pathname === "/api/v1/companies/org_workspace" && request.method === "GET") {
+          return jsonResponse(companyResponse);
+        }
+
+      if (url.pathname === "/api/v1/companies/org_workspace/settings" && request.method === "GET") {
         return jsonResponse(settingsResponse);
       }
 
-      if (url.pathname === "/api/api/v1/companies/org_workspace/settings" && request.method === "PATCH") {
+      if (url.pathname === "/api/v1/companies/org_workspace/settings" && request.method === "PATCH") {
         if (denySettingsUpdate) {
           return jsonResponse(
             { detail: "You do not have permission to do that in Workspace Company LLC." },
@@ -188,7 +197,7 @@ beforeEach(() => {
         return jsonResponse(settingsResponse);
       }
 
-      if (url.pathname === "/api/api/v1/companies/org_workspace/audit-events" && request.method === "GET") {
+      if (url.pathname === "/api/v1/companies/org_workspace/audit-events" && request.method === "GET") {
         if (auditMode === "denied") {
           return jsonResponse(
             { detail: "You do not have permission to do that in Workspace Company LLC." },
