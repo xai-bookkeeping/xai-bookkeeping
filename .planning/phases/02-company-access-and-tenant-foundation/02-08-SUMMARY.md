@@ -80,7 +80,7 @@ Each task was committed atomically:
 1. **Task 1: Add the backend bootstrap and setup-pending readiness contract** - `b7bdd11` (`feat`)
 2. **Task 2: Lock the shared auth, organization, role, and audit regressions with one backend suite** - `ca1203f` (`test`)
 
-**Plan metadata:** pending final docs commit
+**Plan metadata:** recorded in the final docs commit
 
 ## Files Created/Modified
 
