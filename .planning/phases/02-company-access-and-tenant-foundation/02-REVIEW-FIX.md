@@ -30,6 +30,9 @@ status: all_fixed
 - Re-review found one additional shell error-state blocker, fixed in `dd4cd20` (`fix(02): surface company lookup failures in shell`).
 - Passed after follow-up: `rtk docker compose run --rm --no-deps frontend npm run test -- --run src/test/auth-routes.test.tsx src/test/workspace-shell.test.tsx src/test/company-switcher.test.tsx`
 - Follow-up result: `3` files, `22` tests passed.
+- Final re-review found that the company lookup error state's switch action had no mounted switcher; fixed in `0c192b7` (`fix(02): mount company switcher in error state`).
+- Passed after final follow-up: `rtk docker compose run --rm --no-deps frontend npm run test -- --run src/test/auth-routes.test.tsx src/test/workspace-shell.test.tsx src/test/company-switcher.test.tsx`
+- Final follow-up result: `3` files, `22` tests passed.
 
 ## Fixed Issues
 
@@ -56,6 +59,12 @@ status: all_fixed
 **Files modified:** `frontend/src/routes/root.tsx`, `frontend/src/test/workspace-shell.test.tsx`
 **Commit:** `dd4cd20`
 **Applied fix:** Added a retryable company access error state when bootstrap is ready but the company lookup fails with 5xx or transport errors, while preserving the existing 403/404 forbidden branch. Added regression coverage so the shell does not render workspace content or stay stuck in loading on company lookup failure.
+
+### CR-04: Company lookup error state cannot open the company switcher
+
+**Files modified:** `frontend/src/routes/root.tsx`, `frontend/src/test/workspace-shell.test.tsx`
+**Commit:** `0c192b7`
+**Applied fix:** Mounted the real `CompanySwitcher` inside the company lookup error branch and updated the regression test to click `Switch company` and verify the switch-company menu appears.
 
 ---
 
