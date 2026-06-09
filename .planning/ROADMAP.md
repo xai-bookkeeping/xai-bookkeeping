@@ -75,8 +75,8 @@ Plans:
 - [x] 02-05: Roles, permissions, and Clerk-backed team-management flows
 - [x] 02-06: Audit event foundation and UAE company settings backend
 - [x] 02-07: Company settings and activity/audit UI surfaces
-- [ ] 02-08: Backend bootstrap readiness and setup-pending authorization gap closure
-- [ ] 02-09: Frontend auth and onboarding routing gap closure
+- [x] 02-08: Backend bootstrap readiness and setup-pending authorization gap closure
+- [x] 02-09: Frontend auth and onboarding routing gap closure
 - [ ] 02-10: Frontend workspace-shell and company-switcher gap closure
 
 ### Phase 3: Sales-to-Cash MVP
@@ -181,7 +181,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Monorepo and API/Web Foundations | 4/4 | Complete   | 2026-06-04 |
-| 2. Company Access and Tenant Foundation | 7/10 | In Progress|  |
+| 2. Company Access and Tenant Foundation | 9/10 | In Progress|  |
 | 3. Sales-to-Cash MVP | 0/5 | Not started | - |
 | 4. Spend, Payables, and Accounting Core | 0/5 | Not started | - |
 | 5. Reporting and Owner Dashboard | 0/4 | Not started | - |

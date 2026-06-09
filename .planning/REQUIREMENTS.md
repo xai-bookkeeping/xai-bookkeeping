@@ -49,7 +49,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Company Setup and Theming
 
-- [ ] **SETUP-01**: Admin can create and edit company profile details.
+- [x] **SETUP-01**: Admin can create and edit company profile details.
 - [ ] **SETUP-02**: Company profile supports AED currency as the default Phase 1 currency.
 - [ ] **SETUP-03**: Company profile supports UAE TRN fields.
 - [ ] **SETUP-04**: Company settings support UAE VAT registration status and 5% VAT default.
@@ -197,7 +197,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COMP-03 | Phase 2 | Complete |
 | COMP-04 | Phase 2 | Pending |
 | COMP-05 | Phase 2 | Complete |
-| SETUP-01 | Phase 2 | Pending |
+| SETUP-01 | Phase 2 | Complete |
 | SETUP-02 | Phase 2 | Pending |
 | SETUP-03 | Phase 2 | Pending |
 | SETUP-04 | Phase 2 | Pending |
