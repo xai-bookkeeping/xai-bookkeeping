@@ -22,7 +22,13 @@ type CompanyRecord = {
   updated_at: string;
 };
 
-type BootstrapScenario = "no_active_company" | "pending" | "pending_then_ready" | "ready";
+type BootstrapScenario =
+  | "auth_required"
+  | "no_active_company"
+  | "pending"
+  | "pending_then_ready"
+  | "ready"
+  | "server_error";
 
 const authState: AuthState = {
   isLoaded: true,
@@ -234,6 +240,14 @@ beforeEach(() => {
           return jsonResponse(bootstrapNoActiveCompany());
         }
 
+        if (bootstrapScenario === "auth_required") {
+          return jsonResponse({ detail: "Session expired" }, 401);
+        }
+
+        if (bootstrapScenario === "server_error") {
+          return jsonResponse({ detail: "Service unavailable" }, 503);
+        }
+
         if (bootstrapScenario === "ready") {
           return jsonResponse(bootstrapReady(authState.orgId));
         }
@@ -385,6 +399,82 @@ test("create-company invokes Clerk organization creation and stays on the setup 
     { timeout: 5000 },
   );
 
+  expect(capturedRequests.some((request) => request.pathname === "/api/v1/auth/bootstrap")).toBe(true);
+});
+
+test("create-company shows an auth-required state when bootstrap returns 401", async () => {
+  authState.isSignedIn = true;
+  bootstrapScenario = "auth_required";
+
+  renderRoute("/create-company");
+
+  fireEvent.change(await screen.findByLabelText(/company name/i), {
+    target: { value: "Al Noor Trading LLC" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /create company workspace/i }));
+
+  await waitFor(() => {
+    expect(createOrganization).toHaveBeenCalledWith({ name: "Al Noor Trading LLC" });
+    expect(setActive).toHaveBeenCalledWith({ organization: "org_created" });
+  });
+
+  expect(await screen.findByRole("heading", { name: /we need to verify your session again/i })).toBeTruthy();
+  expect(screen.getByRole("link", { name: /back to sign in/i })).toBeTruthy();
+});
+
+test("create-company shows a retryable error state when bootstrap returns 503", async () => {
+  authState.isSignedIn = true;
+  bootstrapScenario = "server_error";
+
+  renderRoute("/create-company");
+
+  fireEvent.change(await screen.findByLabelText(/company name/i), {
+    target: { value: "Al Noor Trading LLC" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /create company workspace/i }));
+
+  await waitFor(() => {
+    expect(createOrganization).toHaveBeenCalledWith({ name: "Al Noor Trading LLC" });
+    expect(setActive).toHaveBeenCalledWith({ organization: "org_created" });
+  });
+
+  expect(await screen.findByRole("heading", { name: /we could not load company readiness/i })).toBeTruthy();
+  expect(screen.getByRole("button", { name: /retry readiness/i })).toBeTruthy();
+});
+
+test("adding a company from an active workspace does not poll bootstrap until the new org becomes active", async () => {
+  authState.isSignedIn = true;
+  authState.orgId = "org_test";
+  bootstrapScenario = "ready";
+
+  let resolveSetActive = () => {};
+  setActive.mockImplementationOnce(
+    ({ organization }: { organization: string }) =>
+      new Promise<void>((resolve) => {
+        resolveSetActive = () => {
+          authState.orgId = organization;
+          resolve();
+        };
+      }),
+  );
+
+  renderRoute("/create-company?intent=new");
+
+  fireEvent.change(await screen.findByLabelText(/company name/i), {
+    target: { value: "Al Noor Trading LLC" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /create company workspace/i }));
+
+  await waitFor(() => {
+    expect(createOrganization).toHaveBeenCalledWith({ name: "Al Noor Trading LLC" });
+    expect(setActive).toHaveBeenCalledWith({ organization: "org_created" });
+  });
+
+  expect(capturedRequests.some((request) => request.pathname === "/api/v1/auth/bootstrap")).toBe(false);
+
+  resolveSetActive?.();
+
+  expect(await screen.findByRole("heading", { name: /workspace probe/i })).toBeTruthy();
   expect(capturedRequests.some((request) => request.pathname === "/api/v1/auth/bootstrap")).toBe(true);
 });
 

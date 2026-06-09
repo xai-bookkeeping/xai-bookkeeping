@@ -9,7 +9,16 @@ import {
   type CompanyResponse,
 } from "@/api";
 import { CompanySwitcher } from "@/components/molecules/company-switcher";
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+} from "@/components/ui";
 import { apiClient } from "@/lib/api-runtime";
 import { cn } from "@/lib/cn";
 
@@ -61,6 +70,23 @@ type CompanyLookupState =
       kind: "forbidden";
     };
 
+type BootstrapQueryError = {
+  message: string;
+  status: number | null;
+};
+
+function getBootstrapErrorMessage(statusCode: number | null): string {
+  if (statusCode === 401 || statusCode === 403) {
+    return "Your session needs to be refreshed before we can open this workspace.";
+  }
+
+  if (statusCode !== null && statusCode >= 500) {
+    return "The backend is temporarily unavailable. Try again in a moment.";
+  }
+
+  return "We could not reach the backend. Check your connection and try again.";
+}
+
 function getOrganizationBusinessActivity(publicMetadata: unknown): string | null {
   if (typeof publicMetadata !== "object" || publicMetadata === null) {
     return null;
@@ -90,20 +116,42 @@ export function RootRoute() {
     enabled: isLoaded && Boolean(orgId),
     queryKey: ["auth-bootstrap", orgId],
     queryFn: async () => {
-      const response = await getAuthBootstrapApiV1AuthBootstrapGet({
-        client: apiClient,
-        responseStyle: "fields",
-      });
+      try {
+        const response = await getAuthBootstrapApiV1AuthBootstrapGet({
+          client: apiClient,
+          responseStyle: "fields",
+        });
 
-      if ("error" in response && response.error) {
-        throw response.error;
+        if ("error" in response && response.error) {
+          const status = response.response?.status ?? null;
+          throw {
+            message: getBootstrapErrorMessage(status),
+            status,
+          } satisfies BootstrapQueryError;
+        }
+
+        return response.data ?? null;
+      } catch (error) {
+        if (
+          typeof error === "object" &&
+          error !== null &&
+          "message" in error &&
+          "status" in error
+        ) {
+          throw error;
+        }
+
+        throw {
+          message: getBootstrapErrorMessage(null),
+          status: null,
+        } satisfies BootstrapQueryError;
       }
-
-      return response.data ?? null;
     },
     staleTime: 5_000,
   });
 
+  const bootstrapError = bootstrapQuery.error as BootstrapQueryError | null;
+  const bootstrapIsAuthRequired = bootstrapError?.status === 401 || bootstrapError?.status === 403;
   const bootstrapStatus = bootstrapQuery.data?.status;
   const organizationBusinessActivity = getOrganizationBusinessActivity(organization?.publicMetadata);
   const organizationName = organization?.name ?? null;
@@ -137,6 +185,41 @@ export function RootRoute() {
     },
     staleTime: 5_000,
   });
+
+  if (bootstrapQuery.isError && bootstrapError) {
+    return (
+      <div className="min-h-dvh bg-[var(--xb-bg)] px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[42rem]">
+          <Card className="border-[color:var(--xb-border)] bg-white shadow-[var(--xb-shadow)]">
+            <CardHeader>
+              <Badge tone="warning" className="w-fit">
+                {bootstrapIsAuthRequired ? "Authentication required" : "Readiness unavailable"}
+              </Badge>
+              <CardTitle>
+                {bootstrapIsAuthRequired
+                  ? "We need to verify your session again"
+                  : "We could not load company readiness"}
+              </CardTitle>
+              <CardDescription>{bootstrapError.message}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-3">
+              <Button onClick={() => void bootstrapQuery.refetch()}>
+                {bootstrapIsAuthRequired ? "Check again" : "Retry readiness"}
+              </Button>
+              {bootstrapIsAuthRequired ? (
+                <Link
+                  to="/sign-in"
+                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-[color:var(--xb-border)] bg-transparent px-4 text-sm font-semibold text-[var(--xb-ink)] transition-colors hover:bg-white"
+                >
+                  Back to sign in
+                </Link>
+              ) : null}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   const companyShellState: CompanyShellState = (() => {
     if (isSwitchingCompany || !isLoaded || !orgId || bootstrapQuery.isLoading || bootstrapQuery.isFetching) {

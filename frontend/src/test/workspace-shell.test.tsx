@@ -26,7 +26,7 @@ type CompanyErrorRecord = {
   status: number;
 };
 
-type BootstrapScenario = "pending" | "ready";
+type BootstrapScenario = "auth_required" | "pending" | "ready" | "server_error";
 
 const authState: AuthState = {
   isLoaded: true,
@@ -233,6 +233,24 @@ beforeEach(() => {
           });
         }
 
+        if (bootstrapScenario === "auth_required") {
+          return jsonResponse(
+            {
+              detail: "Session expired",
+            },
+            401,
+          );
+        }
+
+        if (bootstrapScenario === "server_error") {
+          return jsonResponse(
+            {
+              detail: "Service unavailable",
+            },
+            503,
+          );
+        }
+
         return jsonResponse(
           bootstrapScenario === "pending"
             ? bootstrapPending(authState.orgId)
@@ -341,4 +359,27 @@ test("shows the forbidden company state when bootstrap is ready but the company 
   expect(capturedRequests.some((request) => request.pathname === "/api/v1/companies/org_workspace")).toBe(
     true,
   );
+});
+
+test("shows an auth-required bootstrap state when the bootstrap contract returns 401", async () => {
+  bootstrapScenario = "auth_required";
+
+  renderWorkspace();
+
+  expect(await screen.findByRole("heading", { name: /we need to verify your session again/i })).toBeTruthy();
+  expect(screen.getByRole("button", { name: /check again/i })).toBeTruthy();
+  expect(screen.getByRole("link", { name: /back to sign in/i })).toBeTruthy();
+  expect(capturedRequests.some((request) => request.pathname === "/api/v1/companies/org_workspace")).toBe(
+    false,
+  );
+});
+
+test("shows a retryable bootstrap error state when the bootstrap contract returns 503", async () => {
+  bootstrapScenario = "server_error";
+
+  renderWorkspace();
+
+  expect(await screen.findByRole("heading", { name: /we could not load company readiness/i })).toBeTruthy();
+  expect(screen.getByRole("button", { name: /retry readiness/i })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /run workspace probe/i })).toBeNull();
 });

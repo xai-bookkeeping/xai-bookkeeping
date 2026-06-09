@@ -317,7 +317,7 @@ test("switching companies clears cached data and refreshes the company-scoped sh
 });
 
 test("switching companies shows the loading state before the next company renders", async () => {
-  let resolveSwitch: (() => void) | null = null;
+  let resolveSwitch = () => {};
   setActive.mockImplementationOnce(
     ({ organization }: { organization: string }) =>
       new Promise<void>((resolve) => {
