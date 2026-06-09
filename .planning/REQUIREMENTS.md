@@ -42,9 +42,9 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Multi-Company
 
 - [x] **COMP-01**: User can belong to more than one company.
-- [ ] **COMP-02**: User can switch between companies they are authorized to access.
+- [x] **COMP-02**: User can switch between companies they are authorized to access.
 - [x] **COMP-03**: Each company's business data is private from every other company.
-- [ ] **COMP-04**: Company-scoped files, reports, dashboards, settings, and audit events cannot be accessed by users outside that company.
+- [x] **COMP-04**: Company-scoped files, reports, dashboards, settings, and audit events cannot be accessed by users outside that company.
 - [x] **COMP-05**: Cross-company access attempts are rejected by backend authorization, not only hidden in the UI.
 
 ### Company Setup and Theming
@@ -193,9 +193,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-04 | Phase 2 | Pending |
 | AUTH-05 | Phase 2 | Complete |
 | COMP-01 | Phase 2 | Complete |
-| COMP-02 | Phase 2 | Pending |
+| COMP-02 | Phase 2 | Complete |
 | COMP-03 | Phase 2 | Complete |
-| COMP-04 | Phase 2 | Pending |
+| COMP-04 | Phase 2 | Complete |
 | COMP-05 | Phase 2 | Complete |
 | SETUP-01 | Phase 2 | Complete |
 | SETUP-02 | Phase 2 | Pending |

@@ -14,7 +14,7 @@ XAI Books v1 builds a UAE-first accounting and finance product in vertical MVP s
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Monorepo and API/Web Foundations** - Establish split frontend/backend architecture, FastAPI API, React web app, PostgreSQL, migrations, typed contracts, and modular boundaries. (completed 2026-06-04)
-- [ ] **Phase 2: Company Access and Tenant Foundation** - Deliver secure access, users, roles, multi-company isolation, UAE company settings, and base audit events.
+- [x] **Phase 2: Company Access and Tenant Foundation** - Deliver secure access, users, roles, multi-company isolation, UAE company settings, and base audit events. (completed 2026-06-09)
 - [ ] **Phase 3: Sales-to-Cash MVP** - Deliver customers, invoices, UAE VAT calculation, approvals, PDF invoices, payments, receivables, and record audit history.
 - [ ] **Phase 4: Spend, Payables, and Accounting Core** - Deliver suppliers, expenses, supplier bills, attachments, payables, chart of accounts, and double-entry postings.
 - [ ] **Phase 5: Reporting and Owner Dashboard** - Deliver VAT summary, owner dashboard, reporting tables, filters, drill-downs, and backend-derived tabular reporting.
@@ -77,7 +77,7 @@ Plans:
 - [x] 02-07: Company settings and activity/audit UI surfaces
 - [x] 02-08: Backend bootstrap readiness and setup-pending authorization gap closure
 - [x] 02-09: Frontend auth and onboarding routing gap closure
-- [ ] 02-10: Frontend workspace-shell and company-switcher gap closure
+- [x] 02-10: Frontend workspace-shell and company-switcher gap closure
 
 ### Phase 3: Sales-to-Cash MVP
 
@@ -181,7 +181,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Monorepo and API/Web Foundations | 4/4 | Complete   | 2026-06-04 |
-| 2. Company Access and Tenant Foundation | 9/10 | In Progress|  |
+| 2. Company Access and Tenant Foundation | 10/10 | Complete   | 2026-06-09 |
 | 3. Sales-to-Cash MVP | 0/5 | Not started | - |
 | 4. Spend, Payables, and Accounting Core | 0/5 | Not started | - |
 | 5. Reporting and Owner Dashboard | 0/4 | Not started | - |

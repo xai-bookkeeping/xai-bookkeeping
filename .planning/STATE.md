@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-09-PLAN.md
-last_updated: "2026-06-09T05:14:28.704Z"
+stopped_at: Completed 02-10-PLAN.md
+last_updated: "2026-06-09T05:36:46.546Z"
 last_activity: 2026-06-09 -- Phase 02 execution started
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 10
-  completed_plans: 13
-  percent: 0
+  completed_plans: 14
+  percent: 17
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-31)
 ## Current Position
 
 Phase: 02 (company-access-and-tenant-foundation) — EXECUTING
-Plan: 3 of 10
+Plan: 4 of 10
 Status: Ready to execute
 Last activity: 2026-06-09 -- Phase 02 execution started
 
@@ -58,6 +58,7 @@ Progress: [████████░░] 75%
 | Phase 01-monorepo-and-api-web-foundations P04 | 4m | 3 tasks | 15 files |
 | Phase 02 P08 | 12m | 2 tasks | 9 files |
 | Phase 02 P09 | 21 min | 2 tasks | 10 files |
+| Phase 02 P10 | 19 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -90,6 +91,9 @@ Recent decisions affecting current work:
 - [Phase 02]: Route every successful auth event into /create-company first so the local app, not Clerk, owns the post-auth decision path. — Prevents direct workspace jumps and keeps setup gating product-owned.
 - [Phase 02]: Define SignedIn and SignedOut locally in frontend/src/lib/clerk.ts to avoid depending on missing Clerk exports at runtime. — The installed Clerk package does not export those symbols, so local wrappers prevent blank-page failures.
 - [Phase 02]: Use /api/v1/auth/bootstrap as the company-setup readiness gate and only navigate to /workspace after the backend reports ready. — This keeps first-run company setup visible until the backend confirms the local company context is materialized.
+- [Phase 02]: Gate the authenticated shell on the typed bootstrap readiness contract before trusting company-scoped data.
+- [Phase 02]: Reserve company lookup 403/404 outcomes for true forbidden access, not setup lag.
+- [Phase 02]: Keep company switching cache-safe by preserving setActive(...) plus queryClient.clear() even when the destination company still needs setup.
 
 ### Pending Todos
 
@@ -112,6 +116,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-09T05:14:28.701Z
-Stopped at: Completed 02-09-PLAN.md
+Last session: 2026-06-09T05:36:46.543Z
+Stopped at: Completed 02-10-PLAN.md
 Resume file: None
