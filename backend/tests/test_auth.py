@@ -216,6 +216,111 @@ def test_auth_bootstrap_materializes_ready_company_context_from_clerk_snapshot()
     assert membership.status == "active"
 
 
+def test_auth_bootstrap_stays_pending_when_clerk_snapshot_has_no_membership() -> None:
+    company_id = "org_bootstrap_pending"
+    clerk_user_id = "user_bootstrap_pending"
+    app = build_test_app()
+    app.dependency_overrides[get_authenticated_principal] = lambda: AuthenticatedPrincipal(
+        clerk_user_id=clerk_user_id,
+        session_id="sess_bootstrap_pending",
+        active_organization_id=company_id,
+    )
+
+    class FakeClerkClient:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, str]] = []
+
+        def get_principal_company_snapshot(
+            self,
+            *,
+            company_id: str,
+            clerk_user_id: str,
+        ) -> ClerkOrganizationReadinessSnapshot | None:
+            self.calls.append((company_id, clerk_user_id))
+            return None
+
+    fake_clerk_client = FakeClerkClient()
+    app.dependency_overrides[get_clerk_organization_client] = lambda: fake_clerk_client
+
+    with TestClient(app) as client:
+        response = client.get("/api/v1/auth/bootstrap")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "company_context_pending",
+        "active_organization_id": company_id,
+        "company": None,
+        "membership_role": None,
+    }
+    assert fake_clerk_client.calls == [(company_id, clerk_user_id)]
+
+    with SessionLocal() as session:
+        assert session.query(User).filter(User.clerk_user_id == clerk_user_id).count() == 0
+        assert session.get(Company, company_id) is None
+        assert (
+            session.query(CompanyMembership)
+            .join(User)
+            .filter(User.clerk_user_id == clerk_user_id)
+            .count()
+            == 0
+        )
+
+
+def test_auth_bootstrap_returns_ready_for_existing_local_company_context_without_clerk_lookup() -> None:
+    company_id = "org_bootstrap_local_ready"
+    clerk_user_id = "user_bootstrap_local_ready"
+    app = build_test_app()
+    app.dependency_overrides[get_authenticated_principal] = lambda: AuthenticatedPrincipal(
+        clerk_user_id=clerk_user_id,
+        session_id="sess_bootstrap_local_ready",
+        active_organization_id=company_id,
+    )
+
+    with SessionLocal() as session:
+        user = User(clerk_user_id=clerk_user_id, primary_email_address="ready@example.com", is_active=True)
+        company = Company(
+            id=company_id,
+            name="Local Ready LLC",
+            slug="local-ready-llc",
+            image_url="https://img.example.com/local-ready.png",
+            is_active=True,
+        )
+        session.add_all([user, company])
+        session.flush()
+        session.add(
+            CompanyMembership(
+                clerk_membership_id="mem_bootstrap_local_ready",
+                company_id=company.id,
+                user_id=user.id,
+                role="admin",
+                status="active",
+            )
+        )
+        session.commit()
+
+    class UnexpectedClerkClient:
+        def get_principal_company_snapshot(
+            self,
+            *,
+            company_id: str,
+            clerk_user_id: str,
+        ) -> ClerkOrganizationReadinessSnapshot | None:
+            raise AssertionError("bootstrap should not call Clerk when local rows are already ready")
+
+    app.dependency_overrides[get_clerk_organization_client] = lambda: UnexpectedClerkClient()
+
+    with TestClient(app) as client:
+        response = client.get("/api/v1/auth/bootstrap")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "ready"
+    assert payload["active_organization_id"] == company_id
+    assert payload["membership_role"] == "admin"
+    assert payload["company"]["id"] == company_id
+    assert payload["company"]["name"] == "Local Ready LLC"
+
+
 def test_clerk_user_webhook_events_upsert_and_deactivate_shadow_rows(monkeypatch) -> None:
     app = build_test_app()
     events = iter(
