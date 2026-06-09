@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: "Phase 01 shipped — PR #1"
-stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-06-07T10:20:08.913Z"
-last_activity: "2026-06-05 - Phase 01 shipped via PR #1 after live browser verification and CORS fix"
+status: executing
+stopped_at: Completed 02-08-PLAN.md
+last_updated: "2026-06-09T04:50:15.476Z"
+last_activity: 2026-06-09 -- Phase 02 execution started
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 4
+  total_plans: 10
+  completed_plans: 11
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-31)
 
 **Core value:** SME owners in the UAE can run daily finance confidently in one simple, trustworthy, UAE-first system without needing enterprise complexity or long training.
-**Current focus:** Phase 1: Monorepo and API/Web Foundations
+**Current focus:** Phase 02 — company-access-and-tenant-foundation
 
 ## Current Position
 
-Phase: 1 of 6 (Monorepo and API/Web Foundations)
-Plan: 4 of 4 in current phase
-Status: Phase 01 shipped — PR #1
-Last activity: 2026-06-05 - Phase 01 shipped via PR #1 after live browser verification and CORS fix
+Phase: 02 (company-access-and-tenant-foundation) — EXECUTING
+Plan: 2 of 10
+Status: Ready to execute
+Last activity: 2026-06-09 -- Phase 02 execution started
 
 Progress: [████████░░] 75%
 
@@ -56,6 +56,7 @@ Progress: [████████░░] 75%
 | Phase 01 P02 | 31m | 3 tasks | 26 files |
 | Phase 01-monorepo-and-api-web-foundations P03 | 30m | 3 tasks | 50 files |
 | Phase 01-monorepo-and-api-web-foundations P04 | 4m | 3 tasks | 15 files |
+| Phase 02 P08 | 12m | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,9 @@ Recent decisions affecting current work:
 - [Phase 01-monorepo-and-api-web-foundations]: Phase 1 backend remains one deployable FastAPI app with explicit package seams instead of microservices.
 - [Phase 01-monorepo-and-api-web-foundations]: app.api stays transport-only; health and workspace-probe behavior live under app.platform.
 - [Phase 01-monorepo-and-api-web-foundations]: Future finance, accounting, reporting, workflow, audit, integrations, and ai boundaries exist now as named package seams so later phases do not have to re-litigate ownership.
+- [Phase 02]: Treat same-org missing shadow rows as company_context_pending 409 instead of collapsing them into 403. — Missing local user, company, or membership rows describe setup lag, not foreign-company access.
+- [Phase 02]: Use a typed /api/v1/auth/bootstrap readiness endpoint for the authenticated principal's active Clerk organization. — The frontend needs a deterministic first-run readiness signal without conflating setup state with authorization failure.
+- [Phase 02]: Route first-run Clerk reconciliation through the existing webhook-style upsert path. — Bootstrap and webhook sync must share one materialization flow so local shadow rows stay idempotent.
 
 ### Pending Todos
 
@@ -104,6 +108,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-07T10:20:08.903Z
-Stopped at: Phase 2 UI-SPEC approved
+Last session: 2026-06-09T04:50:15.473Z
+Stopped at: Completed 02-08-PLAN.md
 Resume file: .planning/phases/02-company-access-and-tenant-foundation/02-UI-SPEC.md

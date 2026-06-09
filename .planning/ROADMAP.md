@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. PostgreSQL, migrations, validation schemas, and backend module boundaries exist.
   4. The architecture explicitly avoids Phase 1 microservices while preserving extractable backend boundaries.
 
-**Plans**: 4 plans
+**Plans**: 6 plans
 Plans:
 **Wave 1**
 
@@ -52,7 +52,7 @@ Plans:
 
 ### Phase 2: Company Access and Tenant Foundation
 
-**Goal**: Create the secure company-scoped platform foundation: login, users, roles, permissions, company membership, UAE settings, and audit events.
+**Goal**: As a company owner or team member, I want to sign in, access only my authorized companies, and manage company membership and settings safely, so that I can operate XAI Books securely without cross-company data leakage.
 **Mode:** mvp
 **Depends on**: Phase 1
 **Requirements**: [AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, COMP-01, COMP-02, COMP-03, COMP-04, COMP-05, SETUP-01, SETUP-02, SETUP-03, SETUP-04, AUDT-01, AUDT-02, AUDT-04]
@@ -64,14 +64,20 @@ Plans:
   4. Backend rejects cross-company data, file, report, setting, and audit access attempts.
   5. Important actions create company-scoped audit events with actor, entity, action, timestamp, and change detail.
 
-**Plans**: 4 plans
+**Plans**: 10 plans
 
 Plans:
 
-- [ ] 02-01: Authentication, sessions, and user lifecycle
-- [ ] 02-02: Company membership, switching, and tenant-scoped authorization
-- [ ] 02-03: Roles, permissions, and cross-company negative tests
-- [ ] 02-04: UAE company settings and base audit event model
+- [x] 02-01: Backend authentication, async sessions, and Clerk-backed user lifecycle sync
+- [x] 02-02: Frontend sign-in shell and same-origin API contract
+- [x] 02-03: Backend company membership and tenant-scoped authorization
+- [x] 02-04: Frontend company switching and tenant shell integration
+- [x] 02-05: Roles, permissions, and Clerk-backed team-management flows
+- [x] 02-06: Audit event foundation and UAE company settings backend
+- [x] 02-07: Company settings and activity/audit UI surfaces
+- [ ] 02-08: Backend bootstrap readiness and setup-pending authorization gap closure
+- [ ] 02-09: Frontend auth and onboarding routing gap closure
+- [ ] 02-10: Frontend workspace-shell and company-switcher gap closure
 
 ### Phase 3: Sales-to-Cash MVP
 
@@ -175,7 +181,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Monorepo and API/Web Foundations | 4/4 | Complete   | 2026-06-04 |
-| 2. Company Access and Tenant Foundation | 0/4 | Not started | - |
+| 2. Company Access and Tenant Foundation | 7/10 | In Progress|  |
 | 3. Sales-to-Cash MVP | 0/5 | Not started | - |
 | 4. Spend, Payables, and Accounting Core | 0/5 | Not started | - |
 | 5. Reporting and Owner Dashboard | 0/4 | Not started | - |

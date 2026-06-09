@@ -33,19 +33,19 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Platform Access
 
-- [ ] **AUTH-01**: User can securely sign in.
+- [x] **AUTH-01**: User can securely sign in.
 - [ ] **AUTH-02**: Admin can invite and manage users.
 - [ ] **AUTH-03**: Admin can assign users to company roles.
 - [ ] **AUTH-04**: Role-based permissions control access to viewing, creating, editing, approving, deleting, exporting, and configuring records.
-- [ ] **AUTH-05**: User session handling prevents unauthorized access to company finance data.
+- [x] **AUTH-05**: User session handling prevents unauthorized access to company finance data.
 
 ### Multi-Company
 
-- [ ] **COMP-01**: User can belong to more than one company.
+- [x] **COMP-01**: User can belong to more than one company.
 - [ ] **COMP-02**: User can switch between companies they are authorized to access.
-- [ ] **COMP-03**: Each company's business data is private from every other company.
+- [x] **COMP-03**: Each company's business data is private from every other company.
 - [ ] **COMP-04**: Company-scoped files, reports, dashboards, settings, and audit events cannot be accessed by users outside that company.
-- [ ] **COMP-05**: Cross-company access attempts are rejected by backend authorization, not only hidden in the UI.
+- [x] **COMP-05**: Cross-company access attempts are rejected by backend authorization, not only hidden in the UI.
 
 ### Company Setup and Theming
 
@@ -187,16 +187,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FRNT-02 | Phase 5 | Pending |
 | FRNT-03 | Phase 1 | Complete |
 | FRNT-04 | Phase 1 | Complete |
-| AUTH-01 | Phase 2 | Pending |
+| AUTH-01 | Phase 2 | Complete |
 | AUTH-02 | Phase 2 | Pending |
 | AUTH-03 | Phase 2 | Pending |
 | AUTH-04 | Phase 2 | Pending |
-| AUTH-05 | Phase 2 | Pending |
-| COMP-01 | Phase 2 | Pending |
+| AUTH-05 | Phase 2 | Complete |
+| COMP-01 | Phase 2 | Complete |
 | COMP-02 | Phase 2 | Pending |
-| COMP-03 | Phase 2 | Pending |
+| COMP-03 | Phase 2 | Complete |
 | COMP-04 | Phase 2 | Pending |
-| COMP-05 | Phase 2 | Pending |
+| COMP-05 | Phase 2 | Complete |
 | SETUP-01 | Phase 2 | Pending |
 | SETUP-02 | Phase 2 | Pending |
 | SETUP-03 | Phase 2 | Pending |
