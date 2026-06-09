@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
-import { useAuth, useOrganizationList } from "@clerk/react";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { getAuthBootstrapApiV1AuthBootstrapGet } from "@/api";
 import {
   Badge,
   Button,
@@ -11,32 +12,61 @@ import {
   CardTitle,
   Input,
 } from "@/components/ui";
+import { apiClient } from "@/lib/api-runtime";
+import { useAuth, useOrganizationList } from "@/lib/clerk";
 
-type CreationStatus = "idle" | "creating" | "pending" | "error";
+type CreationStatus = "idle" | "creating" | "error";
 
 export function CreateCompanyRoute() {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { isLoaded, isSignedIn, orgId } = useAuth();
   const { isLoaded: orgListLoaded, createOrganization, setActive } = useOrganizationList();
   const [companyName, setCompanyName] = useState("");
   const [status, setStatus] = useState<CreationStatus>("idle");
+  const [hasStartedSetup, setHasStartedSetup] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (status === "pending" && orgId) {
-      const timer = window.setTimeout(() => {
-        navigate("/workspace", { replace: true });
-      }, 1200);
-
-      return () => window.clearTimeout(timer);
-    }
-  }, [navigate, orgId, status]);
 
   if (isLoaded && !isSignedIn) {
     return <Navigate replace to="/sign-in" />;
   }
 
-  const isBusy = status === "creating" || status === "pending";
+  const isCreatingAnotherCompany = searchParams.get("intent") === "new";
+  const shouldCheckBootstrap =
+    isLoaded && isSignedIn && Boolean(orgId) && (!isCreatingAnotherCompany || hasStartedSetup);
+
+  const bootstrapQuery = useQuery({
+    enabled: shouldCheckBootstrap,
+    queryKey: ["auth-bootstrap", orgId, hasStartedSetup, isCreatingAnotherCompany],
+    queryFn: async () => {
+      const response = await getAuthBootstrapApiV1AuthBootstrapGet({
+        client: apiClient,
+        responseStyle: "fields",
+      });
+
+      if ("error" in response && response.error) {
+        throw response.error;
+      }
+
+      return response.data ?? null;
+    },
+    refetchInterval: (query) =>
+      query.state.data?.status === "company_context_pending" ? 1500 : false,
+  });
+
+  useEffect(() => {
+    if (bootstrapQuery.data?.status === "ready") {
+      navigate("/workspace", { replace: true });
+    }
+  }, [bootstrapQuery.data?.status, navigate]);
+
+  const bootstrapStatus = bootstrapQuery.data?.status;
+  const isPendingHandoff =
+    shouldCheckBootstrap &&
+    (bootstrapStatus === "company_context_pending" ||
+      bootstrapQuery.isLoading ||
+      bootstrapQuery.isFetching);
+  const isBusy = status === "creating" || isPendingHandoff;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,13 +77,16 @@ export function CreateCompanyRoute() {
 
     try {
       setStatus("creating");
+      setHasStartedSetup(true);
       setErrorMessage(null);
       const organization = await createOrganization({ name: companyName.trim() });
       await setActive({ organization: organization.id });
-      setStatus("pending");
+      setStatus("idle");
     } catch (error) {
       setStatus("error");
-      setErrorMessage(error instanceof Error ? error.message : "Could not create your workspace.");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Could not create your company workspace.",
+      );
     }
   }
 
@@ -65,31 +98,55 @@ export function CreateCompanyRoute() {
             Company setup
           </Badge>
           <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight">Create a company workspace</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">
+              {isPendingHandoff ? "We are preparing your company workspace." : "Create a company workspace"}
+            </h1>
             <p className="max-w-2xl text-sm leading-6 text-[var(--xb-muted)]">
-              Give your team a home for finance work. We will connect it to your Clerk organization
-              and hand you into the workspace once setup is ready.
+              {isPendingHandoff
+                ? "We are waiting for the backend bootstrap contract to report readiness before opening the workspace."
+                : "Give your team a home for finance work. We will connect it to your Clerk organization and keep checking readiness until the workspace opens."}
             </p>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Company details</CardTitle>
+            <CardTitle>{isPendingHandoff ? "Workspace handoff" : "Company details"}</CardTitle>
             <CardDescription>
-              Start with the legal or working name. Settings like TRN and VAT status come next.
+              {isPendingHandoff
+                ? "Keep this page open while we check the local company record."
+                : "Start with the legal or working name. Settings like TRN and VAT status come next."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
-            {status === "pending" ? (
+            {isPendingHandoff ? (
               <div className="space-y-4 rounded-[1.25rem] border border-[color:var(--xb-border)] bg-[color:var(--xb-panel)] p-5">
                 <p className="text-sm font-semibold text-[var(--xb-ink)]">
-                  We are preparing your company workspace.
+                  {bootstrapStatus === "company_context_pending"
+                    ? "We are preparing your company workspace."
+                    : "Checking company readiness..."}
                 </p>
                 <p className="text-sm leading-6 text-[var(--xb-muted)]">
-                  Your organization is active. We are waiting for the backend company mirror to
-                  catch up before opening the workspace.
+                  {bootstrapStatus === "company_context_pending"
+                    ? "Your organization is active. We are waiting for the local company context to catch up before opening the workspace."
+                    : "We are syncing the backend readiness contract before opening your workspace."}
                 </p>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    disabled={bootstrapQuery.isFetching}
+                    onClick={() => {
+                      void bootstrapQuery.refetch();
+                    }}
+                  >
+                    {bootstrapQuery.isFetching ? "Checking..." : "Check readiness"}
+                  </Button>
+                  <Link
+                    to="/sign-in"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-[color:var(--xb-border)] bg-white px-4 text-sm font-semibold text-[var(--xb-ink)] transition-colors hover:bg-slate-50"
+                  >
+                    Back to sign in
+                  </Link>
+                </div>
               </div>
             ) : (
               <form className="space-y-5" onSubmit={handleSubmit}>

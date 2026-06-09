@@ -1,7 +1,7 @@
 import { Link, Navigate } from "react-router-dom";
 
 import { Badge, Card, CardContent } from "@/components/ui";
-import { SignIn, useAuth } from "@/lib/clerk";
+import { SignUp, useAuth } from "@/lib/clerk";
 
 function ValuePill({ label }: { label: string }) {
   return (
@@ -11,7 +11,7 @@ function ValuePill({ label }: { label: string }) {
   );
 }
 
-export function SignInRoute() {
+export function SignUpRoute() {
   const { isLoaded, isSignedIn } = useAuth();
 
   if (isLoaded && isSignedIn) {
@@ -29,15 +29,15 @@ export function SignInRoute() {
             </Badge>
             <div className="max-w-xl space-y-5">
               <h1 className="text-4xl font-semibold tracking-tight xl:text-5xl">
-                Run your business finances with confidence.
+                Start your UAE-first finance workspace with a secure company-private foundation.
               </h1>
               <p className="max-w-lg text-base leading-7 text-slate-300">
-                Invoices, payments, VAT and cashflow - in one simple, UAE-first system. Built for
-                owners, trusted by accountants.
+                Create your account, then continue into company setup so your workspace, team
+                access, and audit trail all begin in the right place.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <ValuePill label="5% UAE VAT-ready" />
+              <ValuePill label="Google sign-up supported" />
               <ValuePill label="Company-private by default" />
               <ValuePill label="Audit-friendly foundation" />
             </div>
@@ -47,10 +47,11 @@ export function SignInRoute() {
             <Card className="border-white/10 bg-white/6 text-white shadow-none">
               <CardContent className="space-y-2 p-6">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  Simple
+                  Setup flow
                 </p>
                 <p className="text-sm leading-6 text-slate-200">
-                  Keep the sign-in flow calm and direct, with product-owned next steps.
+                  Sign up first, then continue into company creation without bouncing through
+                  provider-hosted recovery copy.
                 </p>
               </CardContent>
             </Card>
@@ -60,7 +61,7 @@ export function SignInRoute() {
                   Trust
                 </p>
                 <p className="text-sm leading-6 text-slate-200">
-                  Clerk sessions stay cookie-based while the backend keeps company context typed.
+                  Clerk handles identity while XAI Books keeps the onboarding steps product-owned.
                 </p>
               </CardContent>
             </Card>
@@ -71,14 +72,15 @@ export function SignInRoute() {
           <div className="w-full max-w-[32rem] space-y-6">
             <div className="space-y-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[var(--xb-muted)]">
-                Sign in
+                Sign up
               </p>
               <div className="space-y-2">
                 <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
-                  Welcome back
+                  Create your account
                 </h2>
                 <p className="text-sm leading-6 text-[var(--xb-muted)]">
-                  Sign in to your XAI Books workspace.
+                  Use your work email or Google account to create access. We will keep you in
+                  setup until your company workspace is ready.
                 </p>
               </div>
             </div>
@@ -86,30 +88,23 @@ export function SignInRoute() {
             <Card className="border-[color:var(--xb-border)] bg-white">
               <CardContent className="space-y-5 p-6 sm:p-8">
                 <div className="rounded-[1.25rem] border border-[color:var(--xb-border)] bg-[color:var(--xb-panel)] p-4 text-sm leading-6 text-[var(--xb-muted)]">
-                  Your session expired. Sign in again to continue.
+                  Create your account, then continue into company setup.
                 </div>
 
-                <div className="rounded-[1.25rem] border border-[color:var(--xb-border)] bg-[color:var(--xb-panel)] p-4 text-sm leading-6 text-[var(--xb-muted)]">
-                  New here? Create a company workspace and we will keep you in setup until the
-                  backend says it is ready.
-                </div>
-
-                <SignIn
-                  path="/sign-in"
+                <SignUp
+                  path="/sign-up"
                   routing="path"
                   fallbackRedirectUrl="/create-company"
                   forceRedirectUrl="/create-company"
-                  signUpUrl="/sign-up"
-                  transferable={false}
-                  withSignUp={false}
+                  signInUrl="/sign-in"
                 />
 
                 <div className="flex flex-col gap-3 border-t border-[color:var(--xb-border)] pt-5">
                   <Link
-                    to="/sign-up"
+                    to="/sign-in"
                     className="inline-flex h-11 items-center justify-center rounded-2xl border border-[color:var(--xb-border)] bg-white px-4 text-sm font-semibold text-[var(--xb-ink)] transition-colors hover:bg-slate-50"
                   >
-                    Create a company workspace
+                    I already have an account
                   </Link>
                   <p className="text-center text-xs text-[var(--xb-muted)]">
                     English (UAE) - Arabic coming soon
