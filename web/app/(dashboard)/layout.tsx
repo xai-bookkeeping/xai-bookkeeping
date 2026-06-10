@@ -46,6 +46,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
               Invoices
             </Link>
             <Link
+              href="/payments"
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+            >
+              Payments
+            </Link>
+            <Link
               href="/suppliers"
               className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
             >

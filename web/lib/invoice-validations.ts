@@ -24,7 +24,7 @@ export const invoiceMutationSchema = z.object({
 });
 
 export const invoiceStatusActionSchema = z.object({
-  action: z.enum(["submit", "approve", "post", "markPaid"]),
+  action: z.enum(["submit", "approve", "post"]),
 });
 
 export type InvoiceMutationInput = z.infer<typeof invoiceMutationSchema>;

@@ -243,7 +243,7 @@ export function InvoicesClient({
     });
   }
 
-  function statusAction(action: "submit" | "approve" | "post" | "markPaid") {
+  function statusAction(action: "submit" | "approve" | "post") {
     if (!selected) return;
     setNotice(null);
     startTransition(async () => {
@@ -399,7 +399,6 @@ export function InvoicesClient({
             {selected?.status === "DRAFT" ? <Button type="button" variant="secondary" onClick={() => statusAction("submit")}><Send className="h-4 w-4" /> Submit</Button> : null}
             {selected?.status === "SUBMITTED" && canApprove ? <Button type="button" variant="secondary" onClick={() => statusAction("approve")}><ShieldCheck className="h-4 w-4" /> Approve</Button> : null}
             {selected?.status === "APPROVED" ? <Button type="button" variant="secondary" onClick={() => statusAction("post")}><Stamp className="h-4 w-4" /> Post</Button> : null}
-            {selected?.status === "POSTED" ? <Button type="button" variant="secondary" onClick={() => statusAction("markPaid")}>Mark paid</Button> : null}
           </div>
         </form>
       </div>

@@ -44,6 +44,7 @@ model User {
   invoices            Invoice[]           @relation("InvoiceOwner")
   approvedInvoices    Invoice[]           @relation("InvoiceApprover")
   postedInvoices      Invoice[]           @relation("InvoicePoster")
+  payments            Payment[]
 
   @@index([status])
   @@index([emailVerified])
@@ -263,6 +264,7 @@ model Invoice {
   approvedBy User?         @relation("InvoiceApprover", fields: [approvedById], references: [id], onDelete: SetNull)
   postedBy   User?         @relation("InvoicePoster", fields: [postedById], references: [id], onDelete: SetNull)
   lines      InvoiceLine[]
+  payments   Payment[]
 
   @@unique([ownerId, invoiceNumber])
   @@index([ownerId, status])
@@ -287,6 +289,27 @@ model InvoiceLine {
 
   @@index([invoiceId])
   @@map("xb_invoice_lines")
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  ownerId     String        @map("owner_id")
+  invoiceId   String        @map("invoice_id")
+  amount      Decimal       @db.Decimal(12, 2)
+  method      PaymentMethod
+  paymentDate DateTime      @map("payment_date")
+  reference   String?
+  notes       String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  deletedAt   DateTime?     @map("deleted_at")
+
+  owner   User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  @@index([ownerId, deletedAt])
+  @@index([invoiceId])
+  @@index([paymentDate])
+  @@map("xb_payments")
 }
 
 enum Role {
@@ -316,6 +339,13 @@ enum InvoiceStatus {
   APPROVED
   POSTED
   PAID
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CARD
+  CHEQUE
 }
 
 enum AuditAction {
@@ -360,4 +390,6 @@ enum AuditAction {
   INVOICE_POSTED
   INVOICE_PAID
   INVOICE_DELETED
+  PAYMENT_RECORDED
+  PAYMENT_DELETED
 }

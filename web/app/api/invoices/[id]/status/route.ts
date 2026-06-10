@@ -12,7 +12,6 @@ const transitionMap = {
   submit: { from: "DRAFT", to: "SUBMITTED", audit: "INVOICE_SUBMITTED" },
   approve: { from: "SUBMITTED", to: "APPROVED", audit: "INVOICE_APPROVED" },
   post: { from: "APPROVED", to: "POSTED", audit: "INVOICE_POSTED" },
-  markPaid: { from: "POSTED", to: "PAID", audit: "INVOICE_PAID" },
 } as const;
 
 function canApprove(role: string) {
@@ -51,7 +50,6 @@ export async function POST(request: NextRequest, { params }: Props) {
       status: transition.to,
       ...(parsed.data.action === "approve" ? { approvedAt: now, approvedById: session!.user.id } : {}),
       ...(parsed.data.action === "post" ? { postedAt: now, postedById: session!.user.id } : {}),
-      ...(parsed.data.action === "markPaid" ? { paidAt: now } : {}),
     },
     include: { customer: true, lines: { orderBy: { sortOrder: "asc" } } },
   });
