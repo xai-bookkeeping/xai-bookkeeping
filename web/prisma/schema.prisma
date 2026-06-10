@@ -40,6 +40,7 @@ model User {
   invitationsSent     UserInvitation[]    @relation("InvitedBy")
   invitationsReceived UserInvitation[]    @relation("InvitedUser")
   customers           Customer[]
+  suppliers           Supplier[]
 
   @@index([status])
   @@index([emailVerified])
@@ -211,6 +212,27 @@ model Customer {
   @@map("xb_customers")
 }
 
+model Supplier {
+  id            String    @id @default(cuid())
+  ownerId       String    @map("owner_id")
+  name          String
+  contactPerson String?   @map("contact_person")
+  email         String?
+  phone         String?
+  address       String?
+  trn           String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, deletedAt])
+  @@index([ownerId, name])
+  @@index([ownerId, email])
+  @@map("xb_suppliers")
+}
+
 enum Role {
   USER
   ADMIN
@@ -264,4 +286,7 @@ enum AuditAction {
   CUSTOMER_CREATED
   CUSTOMER_UPDATED
   CUSTOMER_DELETED
+  SUPPLIER_CREATED
+  SUPPLIER_UPDATED
+  SUPPLIER_DELETED
 }
