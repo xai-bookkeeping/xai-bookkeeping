@@ -34,6 +34,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <p className="text-xs text-slate-500">{company?.name ?? session.user.companyName}</p>
             </div>
             <Link
+              href="/customers"
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+            >
+              Customers
+            </Link>
+            <Link
               href="/settings"
               className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
             >

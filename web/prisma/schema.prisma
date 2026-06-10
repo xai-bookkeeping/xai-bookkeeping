@@ -39,6 +39,7 @@ model User {
   sessions            UserSession[]
   invitationsSent     UserInvitation[]    @relation("InvitedBy")
   invitationsReceived UserInvitation[]    @relation("InvitedUser")
+  customers           Customer[]
 
   @@index([status])
   @@index([emailVerified])
@@ -189,6 +190,27 @@ model ActivityLog {
   @@map("xb_activity_logs")
 }
 
+model Customer {
+  id            String    @id @default(cuid())
+  ownerId       String    @map("owner_id")
+  name          String
+  contactPerson String?   @map("contact_person")
+  email         String?
+  phone         String?
+  address       String?
+  trn           String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, deletedAt])
+  @@index([ownerId, name])
+  @@index([ownerId, email])
+  @@map("xb_customers")
+}
+
 enum Role {
   USER
   ADMIN
@@ -239,4 +261,7 @@ enum AuditAction {
   USER_INVITE_ACCEPTED
   USER_INVITE_REVOKED
   USER_PASSWORD_RESET_SENT_BY_ADMIN
+  CUSTOMER_CREATED
+  CUSTOMER_UPDATED
+  CUSTOMER_DELETED
 }
