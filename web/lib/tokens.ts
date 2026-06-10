@@ -6,7 +6,7 @@ export function generateToken(): string {
   return crypto.randomBytes(32).toString("hex");
 }
 
-function hashToken(token: string): string {
+export function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token, "utf8").digest("hex");
 }
 
@@ -95,4 +95,29 @@ export async function validatePasswordResetToken(token: string): Promise<boolean
   if (record.used) return false;
   if (record.expiresAt < new Date()) return false;
   return true;
+}
+
+export async function createUserInvitationToken(invitationId: string): Promise<string> {
+  const token = generateToken();
+  const tokenHash = hashToken(token);
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  await db.userInvitation.update({
+    where: { id: invitationId },
+    data: { tokenHash, expiresAt },
+  });
+
+  return token;
+}
+
+export async function validateUserInvitationToken(token: string) {
+  const record = await db.userInvitation.findUnique({
+    where: { tokenHash: hashToken(token) },
+    include: { user: true },
+  });
+
+  if (!record) return null;
+  if (record.acceptedAt || record.revokedAt || record.expiresAt < new Date()) return null;
+
+  return record;
 }

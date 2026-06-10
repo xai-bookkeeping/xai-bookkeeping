@@ -39,6 +39,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
             >
               Settings
             </Link>
+            {session.user.role === "ADMIN" ? (
+              <Link
+                href="/users"
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+              >
+                Users
+              </Link>
+            ) : null}
             <form action={signOutAction}>
               <button
                 type="submit"

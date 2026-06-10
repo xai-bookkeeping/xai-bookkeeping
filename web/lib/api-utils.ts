@@ -15,6 +15,20 @@ export async function requireUser() {
   return { error: null, session };
 }
 
+export async function requireAdmin() {
+  const result = await requireUser();
+  if (result.error) return result;
+
+  if (result.session?.user.role !== "ADMIN") {
+    return {
+      error: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+      session: result.session,
+    };
+  }
+
+  return { error: null, session: result.session };
+}
+
 export async function requestContext() {
   const headersList = await headers();
   return {

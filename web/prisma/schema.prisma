@@ -24,7 +24,7 @@ model User {
   emailVerified   Boolean    @default(false) @map("email_verified")
   emailVerifiedAt DateTime?  @map("email_verified_at")
   status          UserStatus @default(PENDING)
-  role            Role       @default(USER)
+  role            Role       @default(ACCOUNTANT)
   companyName     String?    @map("company_name")
   country         String     @default("AE")
   createdAt       DateTime   @default(now()) @map("created_at")
@@ -37,6 +37,8 @@ model User {
   company             Company?
   preferences         UserPreference?
   sessions            UserSession[]
+  invitationsSent     UserInvitation[]    @relation("InvitedBy")
+  invitationsReceived UserInvitation[]    @relation("InvitedUser")
 
   @@index([status])
   @@index([emailVerified])
@@ -98,6 +100,30 @@ model UserSession {
   @@index([userId, revokedAt])
   @@index([expiresAt])
   @@map("xb_user_sessions")
+}
+
+model UserInvitation {
+  id          String    @id @default(cuid())
+  email       String
+  firstName   String    @map("first_name")
+  lastName    String    @map("last_name")
+  role        Role      @default(ACCOUNTANT)
+  tokenHash   String    @unique @map("token_hash")
+  invitedById String    @map("invited_by_id")
+  userId      String?   @map("user_id")
+  expiresAt   DateTime  @map("expires_at")
+  acceptedAt  DateTime? @map("accepted_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  invitedBy User  @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+  user      User? @relation("InvitedUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([email, createdAt])
+  @@index([invitedById])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("xb_user_invitations")
 }
 
 model VerificationToken {
@@ -166,6 +192,9 @@ model ActivityLog {
 enum Role {
   USER
   ADMIN
+  ACCOUNTANT
+  APPROVER
+  VIEWER
 }
 
 enum UserStatus {
@@ -201,4 +230,13 @@ enum AuditAction {
   SESSIONS_REVOKED
   SESSION_REVOKED
   TWO_FACTOR_PLACEHOLDER_VIEWED
+  USER_INVITED
+  USER_CREATED_BY_ADMIN
+  USER_UPDATED_BY_ADMIN
+  USER_DEACTIVATED
+  USER_REACTIVATED
+  USER_ROLE_CHANGED
+  USER_INVITE_ACCEPTED
+  USER_INVITE_REVOKED
+  USER_PASSWORD_RESET_SENT_BY_ADMIN
 }

@@ -35,7 +35,7 @@ async function main() {
       passwordHash: await bcrypt.hash("Demo@12345!", 12),
       emailVerified: true,
       emailVerifiedAt: new Date(),
-      role: "USER",
+      role: "ACCOUNTANT",
       status: "ACTIVE",
     },
   });

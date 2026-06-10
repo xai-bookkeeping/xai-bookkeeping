@@ -15,8 +15,10 @@ import {
   createPasswordResetToken,
   createVerificationToken,
   hashPassword,
+  validateUserInvitationToken,
   validatePasswordResetToken,
 } from "@/lib/tokens";
+import { acceptInvitationSchema } from "@/lib/user-management-validations";
 import {
   forgotPasswordSchema,
   loginSchema,
@@ -343,6 +345,77 @@ export async function resetPasswordAction(
     userAgent,
     userId: result.userId,
   });
+
+  return {};
+}
+
+export async function validateInvitationAction(token: string): Promise<ActionResult> {
+  const invitation = await validateUserInvitationToken(token);
+  if (!invitation || !invitation.user) {
+    return { error: "This invitation link is invalid or has expired.", code: "invalid_token" };
+  }
+
+  return {
+    data: {
+      email: invitation.email,
+      firstName: invitation.firstName,
+      lastName: invitation.lastName,
+      role: invitation.role,
+    } as never,
+  };
+}
+
+export async function acceptInvitationAction(
+  formData: ResetPasswordFormData,
+): Promise<ActionResult> {
+  const parsed = acceptInvitationSchema.safeParse(formData);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+
+  const { token, password } = parsed.data;
+  const { ip, userAgent } = await getRequestContext();
+  const invitation = await validateUserInvitationToken(token);
+
+  if (!invitation || !invitation.userId) {
+    return { error: "This invitation link is invalid or has expired.", code: "invalid_token" };
+  }
+
+  const passwordHash = await hashPassword(password);
+
+  await db.$transaction([
+    db.user.update({
+      where: { id: invitation.userId },
+      data: {
+        passwordHash,
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
+        status: "ACTIVE",
+      },
+    }),
+    db.userInvitation.update({
+      where: { id: invitation.id },
+      data: { acceptedAt: new Date() },
+    }),
+  ]);
+
+  await logAuditEvent({
+    action: "USER_INVITE_ACCEPTED",
+    email: invitation.email,
+    ip,
+    userAgent,
+    userId: invitation.userId,
+    metadata: { role: invitation.role },
+  });
+
+  try {
+    await sendWelcomeEmail(
+      invitation.email,
+      fullName(invitation.firstName, invitation.lastName),
+    );
+  } catch {
+    // Non-fatal.
+  }
 
   return {};
 }

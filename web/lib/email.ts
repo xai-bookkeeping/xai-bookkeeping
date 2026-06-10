@@ -212,3 +212,27 @@ export async function sendWelcomeEmail(to: string, name: string): Promise<void> 
     text: `Hi ${name}, welcome to XAI Books. Sign in here: ${url}`,
   });
 }
+
+export async function sendUserInvitationEmail(
+  to: string,
+  name: string,
+  invitedByName: string,
+  role: string,
+  token: string,
+): Promise<void> {
+  const url = `${APP_URL}/accept-invite?token=${encodeURIComponent(token)}`;
+  const content = `
+    ${heading("You have been invited to XAI Books")}
+    ${paragraph(`Hi ${name}, ${invitedByName} invited you to join XAI Books as ${role.toLowerCase()}.`)}
+    ${paragraph("Accept the invitation to verify your email address, set your password, and access the workspace.")}
+    ${button("Accept invitation", url)}
+    ${smallLinkNote("This invitation expires in 7 days. If the button does not work, copy this URL:", url)}
+  `;
+
+  await sendEmail({
+    to,
+    subject: "You have been invited to XAI Books",
+    html: baseTemplate(content),
+    text: `Hi ${name}, ${invitedByName} invited you to XAI Books as ${role}. Accept within 7 days: ${url}`,
+  });
+}
