@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("WEB_DATABASE_URL")
+}
+
+model User {
+  id              String     @id @default(cuid())
+  firstName       String     @map("first_name")
+  lastName        String     @map("last_name")
+  displayName     String?    @map("display_name")
+  username        String?    @unique
+  phone           String?
+  jobTitle        String?    @map("job_title")
+  bio             String?
+  avatarUrl       String?    @map("avatar_url")
+  lastLoginAt     DateTime?  @map("last_login_at")
+  sessionVersion  Int        @default(1) @map("session_version")
+  email           String     @unique
+  passwordHash    String     @map("password_hash")
+  emailVerified   Boolean    @default(false) @map("email_verified")
+  emailVerifiedAt DateTime?  @map("email_verified_at")
+  status          UserStatus @default(PENDING)
+  role            Role       @default(USER)
+  companyName     String?    @map("company_name")
+  country         String     @default("AE")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  verificationTokens  VerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+  loginAttempts       LoginAttempt[]
+  activityLogs        ActivityLog[]
+  company             Company?
+  preferences         UserPreference?
+  sessions            UserSession[]
+
+  @@index([status])
+  @@index([emailVerified])
+  @@index([username])
+  @@map("xb_users")
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  ownerId     String   @unique @map("owner_id")
+  name        String
+  logoUrl     String?  @map("logo_url")
+  website     String?
+  email       String?
+  phone       String?
+  address     String?
+  city        String?
+  country     String   @default("AE")
+  taxNumber   String?  @map("tax_number")
+  currency    String   @default("AED")
+  timezone    String   @default("Asia/Dubai")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@map("xb_companies")
+}
+
+model UserPreference {
+  id         String     @id @default(cuid())
+  userId     String     @unique @map("user_id")
+  theme      Theme      @default(SYSTEM)
+  language   String     @default("en")
+  dateFormat String     @default("dd/MM/yyyy") @map("date_format")
+  timeFormat String     @default("24h") @map("time_format")
+  currency   String     @default("AED")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("xb_user_preferences")
+}
+
+model UserSession {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  ip          String?
+  userAgent   String?   @map("user_agent")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  lastSeenAt  DateTime  @default(now()) @map("last_seen_at")
+  expiresAt   DateTime  @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+  @@map("xb_user_sessions")
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([userId])
+  @@map("xb_verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  usedAt    DateTime? @map("used_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([userId])
+  @@map("xb_password_reset_tokens")
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  email     String
+  ip        String?
+  success   Boolean
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([email, createdAt])
+  @@index([ip, createdAt])
+  @@map("xb_login_attempts")
+}
+
+model ActivityLog {
+  id        String      @id @default(cuid())
+  userId    String?     @map("user_id")
+  email     String?
+  action    AuditAction
+  ip        String?
+  userAgent String?     @map("user_agent")
+  metadata  Json?
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([email, createdAt])
+  @@index([action, createdAt])
+  @@map("xb_activity_logs")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  DISABLED
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum AuditAction {
+  USER_REGISTERED
+  EMAIL_VERIFICATION_SENT
+  EMAIL_VERIFIED
+  LOGIN_SUCCEEDED
+  LOGIN_FAILED
+  LOGOUT
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
+  PROFILE_UPDATED
+  AVATAR_UPDATED
+  AVATAR_REMOVED
+  COMPANY_UPDATED
+  COMPANY_LOGO_UPDATED
+  COMPANY_LOGO_REMOVED
+  PASSWORD_CHANGED
+  PREFERENCES_UPDATED
+  SESSIONS_REVOKED
+  SESSION_REVOKED
+  TWO_FACTOR_PLACEHOLDER_VIEWED
+}
