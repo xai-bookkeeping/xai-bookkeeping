@@ -1,0 +1,582 @@
+"use client";
+
+import { useMemo, useRef, useState, useTransition } from "react";
+import {
+  Activity,
+  Building2,
+  Camera,
+  CheckCircle2,
+  Clock,
+  ImageIcon,
+  KeyRound,
+  Monitor,
+  Shield,
+  User,
+} from "lucide-react";
+import { Alert } from "@/components/ui/Alert";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { PasswordStrength } from "@/components/ui/PasswordStrength";
+import { cn } from "@/lib/cn";
+
+type ProfileState = {
+  accountStatus: string;
+  avatarUrl: string;
+  bio: string;
+  createdAt: string;
+  displayName: string;
+  email: string;
+  emailVerified: boolean;
+  firstName: string;
+  jobTitle: string;
+  lastLoginAt: string;
+  lastName: string;
+  phone: string;
+  role: string;
+  username: string;
+};
+
+type CompanyState = {
+  address: string;
+  city: string;
+  country: string;
+  currency: string;
+  email: string;
+  logoUrl: string;
+  name: string;
+  phone: string;
+  taxNumber: string;
+  timezone: string;
+  website: string;
+};
+
+type PreferencesState = {
+  currency: string;
+  dateFormat: string;
+  language: string;
+  theme: "LIGHT" | "DARK" | "SYSTEM";
+  timeFormat: "12h" | "24h";
+};
+
+type ActivityItem = {
+  action: string;
+  createdAt: string;
+  email: string | null;
+  id: string;
+  ip: string | null;
+};
+
+type SessionItem = {
+  createdAt: string;
+  expiresAt: string;
+  id: string;
+  ip: string | null;
+  lastSeenAt: string;
+  revokedAt: string;
+  userAgent: string | null;
+};
+
+type SettingsTab = "profile" | "company" | "security" | "preferences" | "activity";
+
+interface SettingsClientProps {
+  activeSessionId: string;
+  initialActivity: ActivityItem[];
+  initialCompany: CompanyState;
+  initialPreferences: PreferencesState;
+  initialProfile: ProfileState;
+  initialSessions: SessionItem[];
+}
+
+const tabs: Array<{ id: SettingsTab; label: string; icon: typeof User }> = [
+  { id: "profile", label: "Profile", icon: User },
+  { id: "company", label: "Company", icon: Building2 },
+  { id: "security", label: "Security", icon: Shield },
+  { id: "preferences", label: "Preferences", icon: Monitor },
+  { id: "activity", label: "Activity", icon: Activity },
+];
+
+function initials(firstName: string, lastName: string) {
+  return `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase() || "XB";
+}
+
+function formatDate(value: string) {
+  if (!value) return "Never";
+  return new Intl.DateTimeFormat("en-AE", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+async function requestJson<T>(url: string, options: RequestInit): Promise<T> {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers ?? {}),
+    },
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error ?? "Request failed.");
+  return body as T;
+}
+
+function Card({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <section className={cn("rounded-xl border border-slate-200 bg-white shadow-sm", className)}>{children}</section>;
+}
+
+function CardHeader({
+  title,
+  description,
+  icon: Icon,
+}: {
+  title: string;
+  description: string;
+  icon: typeof User;
+}) {
+  return (
+    <div className="flex items-start gap-3 border-b border-slate-100 p-5">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <h2 className="text-base font-semibold text-slate-950">{title}</h2>
+        <p className="mt-1 text-sm text-slate-500">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+export function SettingsClient({
+  activeSessionId,
+  initialActivity,
+  initialCompany,
+  initialPreferences,
+  initialProfile,
+  initialSessions,
+}: SettingsClientProps) {
+  const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
+  const [profile, setProfile] = useState(initialProfile);
+  const [company, setCompany] = useState(initialCompany);
+  const [preferences, setPreferences] = useState(initialPreferences);
+  const [activity, setActivity] = useState(initialActivity);
+  const [sessions, setSessions] = useState(initialSessions);
+  const [password, setPassword] = useState({
+    confirmPassword: "",
+    currentPassword: "",
+    password: "",
+  });
+  const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [activityFilter, setActivityFilter] = useState("");
+  const [isPending, startTransition] = useTransition();
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredActivity = useMemo(
+    () =>
+      activity.filter((item) =>
+        activityFilter ? item.action.toLowerCase().includes(activityFilter.toLowerCase()) : true,
+      ),
+    [activity, activityFilter],
+  );
+
+  function submitProfile() {
+    setNotice(null);
+    startTransition(async () => {
+      try {
+        const result = await requestJson<{ user: Partial<ProfileState> }>("/api/account/profile", {
+          body: JSON.stringify(profile),
+          method: "PATCH",
+        });
+        setProfile((current) => ({ ...current, ...result.user }));
+        setNotice({ type: "success", text: "Profile updated." });
+      } catch (error) {
+        setNotice({ type: "error", text: error instanceof Error ? error.message : "Update failed." });
+      }
+    });
+  }
+
+  function submitCompany() {
+    setNotice(null);
+    startTransition(async () => {
+      try {
+        const result = await requestJson<{ company: CompanyState }>("/api/account/company", {
+          body: JSON.stringify(company),
+          method: "PATCH",
+        });
+        setCompany((current) => ({ ...current, ...result.company }));
+        setNotice({ type: "success", text: "Company settings updated." });
+      } catch (error) {
+        setNotice({ type: "error", text: error instanceof Error ? error.message : "Update failed." });
+      }
+    });
+  }
+
+  function submitPreferences() {
+    setNotice(null);
+    startTransition(async () => {
+      try {
+        const result = await requestJson<{ preferences: PreferencesState }>("/api/account/preferences", {
+          body: JSON.stringify(preferences),
+          method: "PATCH",
+        });
+        setPreferences(result.preferences);
+        setNotice({ type: "success", text: "Preferences saved." });
+      } catch (error) {
+        setNotice({ type: "error", text: error instanceof Error ? error.message : "Update failed." });
+      }
+    });
+  }
+
+  function submitPassword() {
+    setNotice(null);
+    startTransition(async () => {
+      try {
+        await requestJson<{ ok: true }>("/api/account/password", {
+          body: JSON.stringify(password),
+          method: "POST",
+        });
+        setPassword({ confirmPassword: "", currentPassword: "", password: "" });
+        setNotice({ type: "success", text: "Password changed. Other sessions were revoked." });
+      } catch (error) {
+        setNotice({ type: "error", text: error instanceof Error ? error.message : "Password change failed." });
+      }
+    });
+  }
+
+  async function uploadFile(kind: "avatar" | "company-logo", file: File) {
+    const form = new FormData();
+    form.set("file", file);
+    const response = await fetch(`/api/account/${kind}`, { body: form, method: "POST" });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.error ?? "Upload failed.");
+    return body as { avatarUrl?: string; logoUrl?: string };
+  }
+
+  function uploadAvatar(file: File | undefined) {
+    if (!file) return;
+    setNotice(null);
+    startTransition(async () => {
+      try {
+        const result = await uploadFile("avatar", file);
+        setProfile((current) => ({ ...current, avatarUrl: result.avatarUrl ?? "" }));
+        setNotice({ type: "success", text: "Profile photo updated." });
+      } catch (error) {
+        setNotice({ type: "error", text: error instanceof Error ? error.message : "Upload failed." });
+      }
+    });
+  }
+
+  function uploadLogo(file: File | undefined) {
+    if (!file) return;
+    setNotice(null);
+    startTransition(async () => {
+      try {
+        const result = await uploadFile("company-logo", file);
+        setCompany((current) => ({ ...current, logoUrl: result.logoUrl ?? "" }));
+        setNotice({ type: "success", text: "Company logo updated." });
+      } catch (error) {
+        setNotice({ type: "error", text: error instanceof Error ? error.message : "Upload failed." });
+      }
+    });
+  }
+
+  function deleteImage(kind: "avatar" | "company-logo") {
+    setNotice(null);
+    startTransition(async () => {
+      try {
+        await fetch(`/api/account/${kind}`, { method: "DELETE" });
+        if (kind === "avatar") setProfile((current) => ({ ...current, avatarUrl: "" }));
+        else setCompany((current) => ({ ...current, logoUrl: "" }));
+        setNotice({ type: "success", text: "Image removed." });
+      } catch {
+        setNotice({ type: "error", text: "Image removal failed." });
+      }
+    });
+  }
+
+  function revokeSession(id: string) {
+    startTransition(async () => {
+      await fetch(`/api/account/sessions/${id}`, { method: "DELETE" });
+      setSessions((current) =>
+        current.map((item) =>
+          item.id === id ? { ...item, revokedAt: new Date().toISOString() } : item,
+        ),
+      );
+    });
+  }
+
+  function revokeAllSessions() {
+    startTransition(async () => {
+      await fetch("/api/account/sessions", { method: "DELETE" });
+      const now = new Date().toISOString();
+      setSessions((current) => current.map((item) => ({ ...item, revokedAt: now })));
+      setNotice({ type: "success", text: "All sessions were revoked. Sign in again to continue." });
+    });
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-sky-600">
+            Account settings
+          </p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
+            Profile and account
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm text-slate-500">
+            Manage your identity, company details, security, preferences, and account activity.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          {company.logoUrl ? (
+            <img src={company.logoUrl} alt="" className="h-9 w-9 rounded-lg object-contain" />
+          ) : (
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-100 text-sm font-bold text-sky-700">
+              XB
+            </div>
+          )}
+          <div>
+            <p className="text-sm font-semibold text-slate-900">{company.name || "Company"}</p>
+            <p className="text-xs text-slate-500">{profile.email}</p>
+          </div>
+        </div>
+      </div>
+
+      {notice ? (
+        <Alert variant={notice.type === "success" ? "success" : "error"}>{notice.text}</Alert>
+      ) : null}
+
+      <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <aside className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition",
+                  activeTab === tab.id
+                    ? "bg-sky-50 text-sky-700"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-950",
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </aside>
+
+        <div className="space-y-6">
+          {activeTab === "profile" ? (
+            <Card>
+              <CardHeader
+                description="Update how your name, role, and contact details appear in XAI Books."
+                icon={User}
+                title="Personal information"
+              />
+              <div className="space-y-6 p-5">
+                <div className="flex flex-wrap items-center gap-4">
+                  {profile.avatarUrl ? (
+                    <img src={profile.avatarUrl} alt="" className="h-24 w-24 rounded-2xl object-cover" />
+                  ) : (
+                    <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-sky-100 text-2xl font-bold text-sky-700">
+                      {initials(profile.firstName, profile.lastName)}
+                    </div>
+                  )}
+                  <div className="space-y-3">
+                    <div>
+                      <p className="font-semibold text-slate-900">Profile photo</p>
+                      <p className="text-sm text-slate-500">JPG, PNG, or WEBP. Maximum 5MB.</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        hidden
+                        onChange={(event) => uploadAvatar(event.target.files?.[0])}
+                      />
+                      <Button type="button" onClick={() => avatarInputRef.current?.click()}>
+                        <Camera className="h-4 w-4" /> Replace
+                      </Button>
+                      <Button type="button" variant="secondary" onClick={() => deleteImage("avatar")}>
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Input label="First name" value={profile.firstName} onChange={(e) => setProfile({ ...profile, firstName: e.target.value })} />
+                  <Input label="Last name" value={profile.lastName} onChange={(e) => setProfile({ ...profile, lastName: e.target.value })} />
+                  <Input label="Display name" value={profile.displayName} onChange={(e) => setProfile({ ...profile, displayName: e.target.value })} />
+                  <Input label="Username" value={profile.username} onChange={(e) => setProfile({ ...profile, username: e.target.value })} />
+                  <Input label="Email address" value={profile.email} disabled hint="Email changes require a separate verification flow." />
+                  <Input label="Phone number" value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} />
+                  <Input label="Job title" value={profile.jobTitle} onChange={(e) => setProfile({ ...profile, jobTitle: e.target.value })} />
+                  <Input label="Role" value={profile.role} disabled />
+                </div>
+                <label className="block space-y-1.5">
+                  <span className="text-sm font-medium text-slate-700">Bio</span>
+                  <textarea
+                    value={profile.bio}
+                    onChange={(event) => setProfile({ ...profile, bio: event.target.value })}
+                    className="min-h-28 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15"
+                  />
+                </label>
+                <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-3">
+                  <div><span className="text-slate-500">Status</span><p className="font-semibold">{profile.accountStatus}</p></div>
+                  <div><span className="text-slate-500">Date joined</span><p className="font-semibold">{formatDate(profile.createdAt)}</p></div>
+                  <div><span className="text-slate-500">Last login</span><p className="font-semibold">{formatDate(profile.lastLoginAt)}</p></div>
+                </div>
+                <Button loading={isPending} onClick={submitProfile}>Save profile</Button>
+              </div>
+            </Card>
+          ) : null}
+
+          {activeTab === "company" ? (
+            <Card>
+              <CardHeader
+                description="Company details used across invoices, settings, and the application header."
+                icon={Building2}
+                title="Company information"
+              />
+              <div className="space-y-6 p-5">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50">
+                    {company.logoUrl ? <img src={company.logoUrl} alt="" className="max-h-20 max-w-20 object-contain" /> : <ImageIcon className="h-8 w-8 text-slate-400" />}
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-sm text-slate-500">PNG, JPG, or SVG. Maximum 5MB.</p>
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/svg+xml"
+                        hidden
+                        onChange={(event) => uploadLogo(event.target.files?.[0])}
+                      />
+                      <Button type="button" onClick={() => logoInputRef.current?.click()}>
+                        Upload logo
+                      </Button>
+                      <Button type="button" variant="secondary" onClick={() => deleteImage("company-logo")}>
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Input label="Company name" value={company.name} onChange={(e) => setCompany({ ...company, name: e.target.value })} />
+                  <Input label="Website" value={company.website} onChange={(e) => setCompany({ ...company, website: e.target.value })} />
+                  <Input label="Email" value={company.email} onChange={(e) => setCompany({ ...company, email: e.target.value })} />
+                  <Input label="Phone" value={company.phone} onChange={(e) => setCompany({ ...company, phone: e.target.value })} />
+                  <Input label="Address" value={company.address} onChange={(e) => setCompany({ ...company, address: e.target.value })} />
+                  <Input label="City" value={company.city} onChange={(e) => setCompany({ ...company, city: e.target.value })} />
+                  <Input label="Country" value={company.country} onChange={(e) => setCompany({ ...company, country: e.target.value })} />
+                  <Input label="Tax Registration Number" value={company.taxNumber} onChange={(e) => setCompany({ ...company, taxNumber: e.target.value })} />
+                  <Input label="Currency" value={company.currency} onChange={(e) => setCompany({ ...company, currency: e.target.value.toUpperCase() })} />
+                  <Input label="Time zone" value={company.timezone} onChange={(e) => setCompany({ ...company, timezone: e.target.value })} />
+                </div>
+                <Button loading={isPending} onClick={submitCompany}>Save company</Button>
+              </div>
+            </Card>
+          ) : null}
+
+          {activeTab === "security" ? (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader description="Change your password and protect your account." icon={KeyRound} title="Password management" />
+                <div className="space-y-4 p-5">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <Input label="Current password" type="password" value={password.currentPassword} onChange={(e) => setPassword({ ...password, currentPassword: e.target.value })} />
+                    <Input label="New password" type="password" value={password.password} onChange={(e) => setPassword({ ...password, password: e.target.value })} />
+                    <Input label="Confirm password" type="password" value={password.confirmPassword} onChange={(e) => setPassword({ ...password, confirmPassword: e.target.value })} />
+                  </div>
+                  {password.password ? <PasswordStrength password={password.password} /> : null}
+                  <Button loading={isPending} onClick={submitPassword}>Change password</Button>
+                </div>
+              </Card>
+              <Card>
+                <CardHeader description="Review active sessions and revoke access." icon={Shield} title="Security settings" />
+                <div className="space-y-4 p-5">
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                    <p className="font-semibold text-amber-900">Two-factor authentication</p>
+                    <p className="mt-1 text-sm text-amber-800">Placeholder ready. SMS/authenticator setup will be enabled in a later security phase.</p>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">Active sessions</p>
+                      <p className="text-sm text-slate-500">Last login: {formatDate(profile.lastLoginAt)}</p>
+                    </div>
+                    <Button variant="danger" onClick={revokeAllSessions}>Sign out all devices</Button>
+                  </div>
+                  <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+                    {sessions.map((item) => (
+                      <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
+                        <div>
+                          <p className="font-semibold text-slate-900">{item.userAgent ?? "Unknown device"}</p>
+                          <p className="text-slate-500">IP {item.ip ?? "unknown"} · Last seen {formatDate(item.lastSeenAt)}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={cn("rounded-full px-2 py-1 text-xs font-semibold", item.revokedAt ? "bg-slate-100 text-slate-500" : "bg-emerald-50 text-emerald-700")}>
+                            {item.revokedAt ? "Revoked" : item.id === activeSessionId ? "Current" : "Active"}
+                          </span>
+                          {!item.revokedAt && item.id !== activeSessionId ? (
+                            <Button size="sm" variant="secondary" onClick={() => revokeSession(item.id)}>Revoke</Button>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            </div>
+          ) : null}
+
+          {activeTab === "preferences" ? (
+            <Card>
+              <CardHeader description="Control localization and display defaults." icon={Monitor} title="Account preferences" />
+              <div className="grid gap-4 p-5 md:grid-cols-2">
+                <label className="space-y-1.5 text-sm font-medium text-slate-700">Theme<select className="h-10 w-full rounded-xl border border-slate-200 px-3" value={preferences.theme} onChange={(e) => setPreferences({ ...preferences, theme: e.target.value as PreferencesState["theme"] })}><option value="LIGHT">Light</option><option value="DARK">Dark</option><option value="SYSTEM">System</option></select></label>
+                <Input label="Language" value={preferences.language} onChange={(e) => setPreferences({ ...preferences, language: e.target.value })} />
+                <label className="space-y-1.5 text-sm font-medium text-slate-700">Date format<select className="h-10 w-full rounded-xl border border-slate-200 px-3" value={preferences.dateFormat} onChange={(e) => setPreferences({ ...preferences, dateFormat: e.target.value })}><option value="dd/MM/yyyy">dd/MM/yyyy</option><option value="MM/dd/yyyy">MM/dd/yyyy</option><option value="yyyy-MM-dd">yyyy-MM-dd</option></select></label>
+                <label className="space-y-1.5 text-sm font-medium text-slate-700">Time format<select className="h-10 w-full rounded-xl border border-slate-200 px-3" value={preferences.timeFormat} onChange={(e) => setPreferences({ ...preferences, timeFormat: e.target.value as PreferencesState["timeFormat"] })}><option value="24h">24 hour</option><option value="12h">12 hour</option></select></label>
+                <Input label="Currency" value={preferences.currency} onChange={(e) => setPreferences({ ...preferences, currency: e.target.value.toUpperCase() })} />
+                <div className="md:col-span-2"><Button loading={isPending} onClick={submitPreferences}>Save preferences</Button></div>
+              </div>
+            </Card>
+          ) : null}
+
+          {activeTab === "activity" ? (
+            <Card>
+              <CardHeader description="Track account, login, profile, and security events." icon={Clock} title="Account activity" />
+              <div className="space-y-4 p-5">
+                <Input label="Filter by action" placeholder="LOGIN, PROFILE, PASSWORD..." value={activityFilter} onChange={(e) => setActivityFilter(e.target.value)} />
+                <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+                  {filteredActivity.map((item) => (
+                    <div key={item.id} className="grid gap-2 p-4 text-sm md:grid-cols-[1fr_180px_140px]">
+                      <div className="flex items-center gap-2 font-semibold text-slate-900"><CheckCircle2 className="h-4 w-4 text-sky-500" />{item.action.replaceAll("_", " ")}</div>
+                      <div className="text-slate-500">{item.ip ?? "No IP"}</div>
+                      <div className="text-slate-500">{formatDate(item.createdAt)}</div>
+                    </div>
+                  ))}
+                  {filteredActivity.length === 0 ? <p className="p-4 text-sm text-slate-500">No activity found.</p> : null}
+                </div>
+              </div>
+            </Card>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
