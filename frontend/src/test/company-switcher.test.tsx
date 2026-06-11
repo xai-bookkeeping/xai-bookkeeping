@@ -62,23 +62,29 @@ vi.mock("@clerk/react", () => ({
     organization:
       organizations.find((organization) => organization.id === authState.orgId) ?? null,
   }),
-  useOrganizationList: () => ({
-    createOrganization,
-    isLoaded: authState.isLoaded && authState.isSignedIn,
-    setActive,
-    userMemberships: {
-      data: organizations.map((organization) => ({
-        organization: {
-          id: organization.id,
-          imageUrl: organization.imageUrl,
-          name: organization.name,
-          publicMetadata: {
-            businessActivity: organization.businessActivity,
-          },
-        },
-      })),
-    },
-  }),
+  useOrganizationList: (params?: { userMemberships?: true | Record<string, unknown> }) => {
+    const shouldLoadMemberships = Boolean(params?.userMemberships);
+
+    return {
+      createOrganization,
+      isLoaded: authState.isLoaded && authState.isSignedIn,
+      setActive,
+      userMemberships: {
+        data: shouldLoadMemberships
+          ? organizations.map((organization) => ({
+              organization: {
+                id: organization.id,
+                imageUrl: organization.imageUrl,
+                name: organization.name,
+                publicMetadata: {
+                  businessActivity: organization.businessActivity,
+                },
+              },
+            }))
+          : [],
+      },
+    };
+  },
 }));
 
 const healthResponse = {

@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
+  envPrefix: ["VITE_", "NEXT_PUBLIC_"],
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -16,7 +17,14 @@ export default defineConfig({
     proxy: {
       "/api": {
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
+        target: `http://backend:${Number(process.env.API_CONTAINER_PORT ?? 8000)}`,
+      },
+      "/health": {
+        changeOrigin: true,
+        target: `http://backend:${Number(process.env.API_CONTAINER_PORT ?? 8000)}`,
+      },
+      "/workspace-probe": {
+        changeOrigin: true,
         target: `http://backend:${Number(process.env.API_CONTAINER_PORT ?? 8000)}`,
       },
     },

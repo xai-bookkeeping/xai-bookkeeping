@@ -12,6 +12,7 @@ import {
   type TeamMemberResponse,
 } from "@/api";
 import { RoleBadge } from "@/components/atoms/role-badge";
+import { CompanySetupRequiredState } from "@/components/organisms/company-setup-required-state";
 import { InviteMemberDialog } from "@/components/organisms/invite-member-dialog";
 import { PermissionDeniedState } from "@/components/organisms/permission-denied-state";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
@@ -46,7 +47,8 @@ function normalizeErrorMessage(error: unknown, companyName: string): string {
 }
 
 export function TeamRolesRoute() {
-  const { activeCompany, companyShellState, openCompanySwitcher } = useOutletContext<RootRouteContext>();
+  const { activeCompany, companyShellState, openCompanySwitcher, retryCompanyAccess } =
+    useOutletContext<RootRouteContext>();
   const queryClient = useQueryClient();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
@@ -191,6 +193,15 @@ export function TeamRolesRoute() {
 
   if (companyShellState === "forbidden") {
     return <PermissionDeniedState onSwitchCompany={openCompanySwitcher} />;
+  }
+
+  if (companyShellState === "setup") {
+    return (
+      <CompanySetupRequiredState
+        onRetry={retryCompanyAccess}
+        onSwitchCompany={openCompanySwitcher}
+      />
+    );
   }
 
   if (companyShellState === "loading" || !activeCompany || teamQuery.isLoading) {

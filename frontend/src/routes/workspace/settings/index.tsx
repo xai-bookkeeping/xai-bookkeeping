@@ -7,6 +7,7 @@ import {
   type CompanySettingsResponse,
   type CompanySettingsUpdateRequest,
 } from "@/api";
+import { CompanySetupRequiredState } from "@/components/organisms/company-setup-required-state";
 import { CompanySettingsForm } from "@/components/organisms/company-settings-form";
 import { PermissionDeniedState } from "@/components/organisms/permission-denied-state";
 import { Card, CardContent } from "@/components/ui";
@@ -29,7 +30,8 @@ function getErrorMessage(error: unknown, companyName: string): string {
 }
 
 export function CompanySettingsRoute() {
-  const { activeCompany, companyShellState, openCompanySwitcher } = useOutletContext<RootRouteContext>();
+  const { activeCompany, companyShellState, openCompanySwitcher, retryCompanyAccess } =
+    useOutletContext<RootRouteContext>();
   const queryClient = useQueryClient();
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
@@ -83,6 +85,15 @@ export function CompanySettingsRoute() {
 
   if (companyShellState === "forbidden") {
     return <PermissionDeniedState onSwitchCompany={openCompanySwitcher} />;
+  }
+
+  if (companyShellState === "setup") {
+    return (
+      <CompanySetupRequiredState
+        onRetry={retryCompanyAccess}
+        onSwitchCompany={openCompanySwitcher}
+      />
+    );
   }
 
   if (companyShellState === "loading" || !activeCompany || settingsQuery.isLoading || !settingsQuery.data) {

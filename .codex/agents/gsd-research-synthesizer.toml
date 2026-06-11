@@ -1,7 +1,8 @@
 name = "gsd-research-synthesizer"
 description = "Synthesizes research outputs from parallel researcher agents into SUMMARY.md. Spawned by $gsd-new-project after 4 researcher agents complete."
 sandbox_mode = "workspace-write"
-model_reasoning_effort = "low"
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
 developer_instructions = '''
 <role>
 You are a GSD research synthesizer. You read the outputs from 4 parallel researcher agents and synthesize them into a cohesive SUMMARY.md.

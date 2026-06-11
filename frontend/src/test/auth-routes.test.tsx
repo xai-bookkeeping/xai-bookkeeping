@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RouterProvider } from "react-router-dom";
+import { MemoryRouter, RouterProvider } from "react-router-dom";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { createTestRouter } from "@/app/router";
 import { API_BASE_URL } from "@/lib/api-runtime";
+import { CreateCompanyRoute } from "@/routes/auth/create-company";
 
 type AuthState = {
   isLoaded: boolean;
@@ -81,6 +82,10 @@ const signUpMock = vi.fn((props: Record<string, unknown>) => (
   <div data-testid="clerk-sign-up">{JSON.stringify(props)}</div>
 ));
 
+const taskChooseOrganizationMock = vi.fn((props: Record<string, unknown>) => (
+  <div data-testid="clerk-task-choose-organization">{JSON.stringify(props)}</div>
+));
+
 let bootstrapScenario: BootstrapScenario = "no_active_company";
 let bootstrapCallCount = 0;
 let latestProbe:
@@ -151,17 +156,48 @@ function renderRoute(path: string) {
     },
   });
 
-  render(
+  const router = createTestRouter([path]);
+  const makeUi = () => (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={createTestRouter([path])} />
-    </QueryClientProvider>,
+      <RouterProvider router={router} />
+    </QueryClientProvider>
   );
+  const view = render(makeUi());
+
+  return {
+    ...view,
+    rerenderRoute: () => view.rerender(makeUi()),
+  };
+}
+
+function renderCreateCompanyRouteDirect() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      mutations: { retry: false },
+      queries: { retry: false },
+    },
+  });
+
+  const makeUi = () => (
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={["/create-company"]}>
+        <CreateCompanyRoute />
+      </MemoryRouter>
+    </QueryClientProvider>
+  );
+  const view = render(makeUi());
+
+  return {
+    ...view,
+    rerenderRoute: () => view.rerender(makeUi()),
+  };
 }
 
 vi.mock("@clerk/react", () => ({
   ClerkProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
   SignIn: (props: Record<string, unknown>) => signInMock(props),
   SignUp: (props: Record<string, unknown>) => signUpMock(props),
+  TaskChooseOrganization: (props: Record<string, unknown>) => taskChooseOrganizationMock(props),
   SignedIn: ({ children }: { children: ReactNode }) => (authState.isSignedIn ? <>{children}</> : null),
   SignedOut: ({ children }: { children: ReactNode }) => (!authState.isSignedIn ? <>{children}</> : null),
   useAuth: () => ({
@@ -203,6 +239,7 @@ beforeEach(() => {
   setActive.mockClear();
   signInMock.mockClear();
   signUpMock.mockClear();
+  taskChooseOrganizationMock.mockClear();
 
   vi.stubGlobal(
     "fetch",
@@ -364,6 +401,30 @@ test("sign-up continuation paths stay inside the local auth flow instead of fall
   expect(screen.getByTestId("clerk-sign-up")).toBeTruthy();
 });
 
+test("Clerk choose-organization tasks render in a dedicated onboarding route before app company readiness", async () => {
+  authState.isSignedIn = true;
+
+  renderRoute("/tasks/choose-organization");
+
+  expect(await screen.findByRole("heading", { name: /finish company access/i })).toBeTruthy();
+  expect(screen.getByTestId("clerk-task-choose-organization")).toBeTruthy();
+
+  const taskProps = taskChooseOrganizationMock.mock.calls.at(-1)?.[0] as
+    | Record<string, unknown>
+    | undefined;
+  expect(taskProps?.redirectUrlComplete).toBe("/create-company");
+});
+
+test("Clerk choose-organization tasks render while the session task is still pending", async () => {
+  authState.isSignedIn = false;
+
+  renderRoute("/tasks/choose-organization");
+
+  expect(await screen.findByRole("heading", { name: /finish company access/i })).toBeTruthy();
+  expect(screen.getByTestId("clerk-task-choose-organization")).toBeTruthy();
+  expect(screen.queryByRole("heading", { name: /welcome back/i })).toBeNull();
+});
+
 test("signed-in users without an active company are redirected into company creation", async () => {
   authState.isSignedIn = true;
 
@@ -371,6 +432,29 @@ test("signed-in users without an active company are redirected into company crea
 
   expect(await screen.findByRole("heading", { name: /create a company workspace/i })).toBeTruthy();
   expect(screen.getByText(/give your team a home for finance work/i)).toBeTruthy();
+});
+
+test("create-company keeps hook order stable when Clerk auth changes during OTP handoff", async () => {
+  authState.isSignedIn = true;
+
+  const view = renderCreateCompanyRouteDirect();
+
+  expect(await screen.findByRole("heading", { name: /create a company workspace/i })).toBeTruthy();
+
+  authState.isSignedIn = false;
+  expect(() => view.rerenderRoute()).not.toThrow(/rendered fewer hooks/i);
+});
+
+test("create-company waits for readiness after Clerk organization task completion instead of asking again", async () => {
+  authState.isSignedIn = true;
+  authState.orgId = "org_test";
+  bootstrapScenario = "pending";
+
+  renderRoute("/create-company");
+
+  expect(await screen.findByText(/we are preparing your company workspace/i)).toBeTruthy();
+  expect(screen.queryByLabelText(/company name/i)).toBeNull();
+  expect(createOrganization).not.toHaveBeenCalled();
 });
 
 test("create-company invokes Clerk organization creation and stays on the setup page until bootstrap is ready", async () => {

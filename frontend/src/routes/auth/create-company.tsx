@@ -61,10 +61,6 @@ export function CreateCompanyRoute() {
   const [pendingOrganizationId, setPendingOrganizationId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  if (isLoaded && !isSignedIn) {
-    return <Navigate replace to="/sign-in" />;
-  }
-
   const isCreatingAnotherCompany = searchParams.get("intent") === "new";
   const isWaitingForNewOrganization =
     isCreatingAnotherCompany && pendingOrganizationId !== null && orgId !== pendingOrganizationId;
@@ -102,6 +98,10 @@ export function CreateCompanyRoute() {
       navigate("/workspace", { replace: true });
     }
   }, [bootstrapQuery.data?.status, navigate]);
+
+  if (isLoaded && !isSignedIn) {
+    return <Navigate replace to="/sign-in" />;
+  }
 
   const bootstrapStatus = bootstrapQuery.data?.status;
   const bootstrapError = getBootstrapQueryError(bootstrapQuery.error);

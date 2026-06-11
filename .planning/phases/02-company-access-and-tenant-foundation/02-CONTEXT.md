@@ -42,6 +42,7 @@ Deliver the secure company-scoped platform foundation: Clerk-backed authenticati
 - **D-16:** Frontend uses the **Clerk React SDK** (`@clerk/clerk-react`). Route protection via `<SignedIn>` / `<SignedOut>` components wrapping React Router. No custom auth context.
 - **D-17:** Company switcher is a **dropdown in the app header**. Selecting a company calls Clerk's `setActive({ organization })` to rotate the JWT, then clears the TanStack Query cache.
 - **D-18:** Active company context available in components via Clerk's `useOrganization()` hook.
+- **D-19:** Protected frontend API calls use a **same-origin `/api` path**. In development, Vite proxies `/api` to the backend container; in deployed environments, an ingress/reverse-proxy path preserves the same-origin cookie contract. Frontend JS does not read Clerk session tokens directly.
 
 ### Claude's Discretion
 - Clerk webhook endpoint implementation details (signature verification, retry handling).
@@ -60,7 +61,7 @@ Deliver the secure company-scoped platform foundation: Clerk-backed authenticati
 ### Project Foundation
 - `.planning/PROJECT.md` — Core value, constraints, key decisions (FastAPI, PostgreSQL, monorepo, no microservices, UAE-first). Read this first.
 - `.planning/REQUIREMENTS.md` — Full v1 requirements. Phase 2 covers: AUTH-01–05, COMP-01–05, SETUP-01–04, AUDT-01, AUDT-02, AUDT-04.
-- `.planning/ROADMAP.md` — Phase 2 goal, success criteria, and 4-plan breakdown (02-01 through 02-04).
+- `.planning/ROADMAP.md` — Phase 2 goal, success criteria, and 8-plan breakdown (02-01 through 02-08).
 
 ### Phase 1 Decisions (carry forward)
 - `.planning/phases/01-monorepo-and-api-web-foundations/01-CONTEXT.md` — Monorepo structure, API contract mechanism, frontend stack (shadcn/ui, Tailwind, React Router v6, TanStack Query), atomic component split. All carry into Phase 2.

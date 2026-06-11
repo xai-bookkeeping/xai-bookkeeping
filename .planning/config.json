@@ -41,7 +41,9 @@
     "post_planning_gaps": true,
     "security_enforcement": true,
     "security_asvs_level": 1,
-    "security_block_on": "high"
+    "security_block_on": "high",
+    "_auto_chain_active": false,
+    "use_worktrees": false
   },
   "ship": {
     "pr_body_sections": [
@@ -86,16 +88,22 @@
   "granularity": "standard",
   "runtime": "codex",
   "models": {
+    "planning": "sonnet",
+    "discuss": "sonnet",
+    "research": "sonnet",
     "execution": "haiku",
-    "verification": "sonnet"
+    "verification": "sonnet",
+    "completion": "sonnet"
   },
   "model_profile_overrides": {
     "codex": {
+      "opus": "gpt-5.4",
       "haiku": "gpt-5.4-mini",
       "sonnet": "gpt-5.4"
     }
   },
   "effort": {
+    "default": "xhigh",
     "agent_overrides": {
       "gsd-executor": "xhigh",
       "gsd-verifier": "xhigh",

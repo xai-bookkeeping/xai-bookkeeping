@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useOutletContext } from "react-router-dom";
 import { listAuditEventsApiV1CompaniesCompanyIdAuditEventsGet, type AuditEventListResponse } from "@/api";
 import { AuditEventTable } from "@/components/organisms/audit-event-table";
+import { CompanySetupRequiredState } from "@/components/organisms/company-setup-required-state";
 import { PermissionDeniedState } from "@/components/organisms/permission-denied-state";
 import { Card, CardContent } from "@/components/ui";
 import { apiClient } from "@/lib/api-runtime";
@@ -23,7 +24,8 @@ function getErrorMessage(error: unknown, companyName: string): string {
 }
 
 export function AuditRoute() {
-  const { activeCompany, companyShellState, openCompanySwitcher } = useOutletContext<RootRouteContext>();
+  const { activeCompany, companyShellState, openCompanySwitcher, retryCompanyAccess } =
+    useOutletContext<RootRouteContext>();
 
   const auditQuery = useQuery({
     enabled: companyShellState === "ready" && Boolean(activeCompany),
@@ -57,6 +59,15 @@ export function AuditRoute() {
 
   if (companyShellState === "forbidden") {
     return <PermissionDeniedState onSwitchCompany={openCompanySwitcher} />;
+  }
+
+  if (companyShellState === "setup") {
+    return (
+      <CompanySetupRequiredState
+        onRetry={retryCompanyAccess}
+        onSwitchCompany={openCompanySwitcher}
+      />
+    );
   }
 
   if (companyShellState === "loading" || !activeCompany || auditQuery.isLoading || !auditQuery.data) {

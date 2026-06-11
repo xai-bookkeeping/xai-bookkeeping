@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { useOrganizationList } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useOrganizationList } from "@/lib/clerk";
 import { cn } from "@/lib/cn";
 
 type CompanySwitcherProps = {
@@ -38,7 +38,9 @@ export function CompanySwitcher({
 }: CompanySwitcherProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isLoaded, setActive, userMemberships } = useOrganizationList();
+  const { isLoaded, setActive, userMemberships } = useOrganizationList({
+    userMemberships: true,
+  });
   const [feedback, setFeedback] = useState<string | null>(null);
   const [switchingCompanyId, setSwitchingCompanyId] = useState<string | null>(null);
 

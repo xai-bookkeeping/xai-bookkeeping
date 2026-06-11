@@ -5,6 +5,7 @@ import {
   type RouteObject,
 } from "react-router-dom";
 import { useAuth } from "@/lib/clerk";
+import { ChooseOrganizationTaskRoute } from "@/routes/auth/choose-organization-task";
 import { CreateCompanyRoute } from "@/routes/auth/create-company";
 import { SignInRoute } from "@/routes/auth/sign-in";
 import { SignUpRoute } from "@/routes/auth/sign-up";
@@ -70,6 +71,10 @@ export const appRoutes: RouteObject[] = [
       {
         path: "create-company",
         element: <CreateCompanyRoute />,
+      },
+      {
+        path: "tasks/choose-organization",
+        element: <ChooseOrganizationTaskRoute />,
       },
       {
         element: <ProtectedShellRoute />,

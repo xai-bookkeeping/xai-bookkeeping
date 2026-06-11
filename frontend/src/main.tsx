@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router-dom";
 import { router } from "@/app/router";
-import { ClerkProvider, resolveClerkPublishableKey } from "@/lib/clerk";
+import { CLERK_TASK_URLS, ClerkProvider, resolveClerkPublishableKey } from "@/lib/clerk";
 import "@/styles.css";
 
 const clerkPublishableKey = resolveClerkPublishableKey(import.meta.env);
@@ -28,6 +28,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       signInUrl="/sign-in"
       signUpFallbackRedirectUrl="/create-company"
       signUpUrl="/sign-up"
+      taskUrls={CLERK_TASK_URLS}
     >
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />

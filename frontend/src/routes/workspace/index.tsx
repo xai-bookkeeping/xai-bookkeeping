@@ -16,6 +16,7 @@ import {
   type HealthResponse,
   type WorkspaceProbeResponse,
 } from "@/api";
+import { CompanySetupRequiredState } from "@/components/organisms/company-setup-required-state";
 import { PermissionDeniedState } from "@/components/organisms/permission-denied-state";
 import { apiClient } from "@/lib/api-runtime";
 import type { RootRouteContext } from "@/routes/root";
@@ -45,7 +46,7 @@ function getProbeLabel(probe: WorkspaceProbeResponse | null | undefined): string
 }
 
 export function WorkspaceRoute() {
-  const { activeCompany, companyShellState, isSwitchingCompany, openCompanySwitcher } =
+  const { activeCompany, companyShellState, isSwitchingCompany, openCompanySwitcher, retryCompanyAccess } =
     useOutletContext<RootRouteContext>();
   const queryClient = useQueryClient();
 
@@ -103,6 +104,15 @@ export function WorkspaceRoute() {
 
   if (companyShellState === "forbidden") {
     return <PermissionDeniedState onSwitchCompany={openCompanySwitcher} />;
+  }
+
+  if (companyShellState === "setup") {
+    return (
+      <CompanySetupRequiredState
+        onRetry={retryCompanyAccess}
+        onSwitchCompany={openCompanySwitcher}
+      />
+    );
   }
 
   if (companyShellState === "loading" || isSwitchingCompany || !activeCompany) {
