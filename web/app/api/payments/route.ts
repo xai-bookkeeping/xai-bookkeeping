@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser, requestContext, validationError } from "@/lib/api-utils";
+import { postPaymentJournal } from "@/lib/accounting";
 import { logAuditEvent } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { outstandingAmount, paidAmount, roundMoney } from "@/lib/payment-calculations";
@@ -127,6 +128,15 @@ export async function POST(request: NextRequest) {
           },
         },
       },
+    });
+
+    await postPaymentJournal(tx, {
+      amount: payment.amount,
+      id: payment.id,
+      invoice: { invoiceNumber: invoice.invoiceNumber },
+      ownerId: payment.ownerId,
+      paymentDate: payment.paymentDate,
+      reference: payment.reference,
     });
 
     const newOutstanding = outstandingAmount(invoice.total, [

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser, requestContext } from "@/lib/api-utils";
+import { postPaymentReversalJournal } from "@/lib/accounting";
 import { logAuditEvent } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { outstandingAmount } from "@/lib/payment-calculations";
@@ -24,6 +25,13 @@ export async function DELETE(_request: Request, { params }: Props) {
   if (!payment) return NextResponse.json({ error: "Payment not found." }, { status: 404 });
 
   await db.$transaction(async (tx) => {
+    await postPaymentReversalJournal(tx, {
+      amount: payment.amount,
+      id: payment.id,
+      invoice: { invoiceNumber: payment.invoice.invoiceNumber },
+      ownerId: payment.ownerId,
+      reference: payment.reference,
+    });
     await tx.payment.update({ where: { id }, data: { deletedAt: new Date() } });
 
     const remainingPayments = payment.invoice.payments.filter((item) => item.id !== id);

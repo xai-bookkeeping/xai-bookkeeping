@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser, requestContext, validationError } from "@/lib/api-utils";
+import { postInvoiceJournal } from "@/lib/accounting";
 import { logAuditEvent } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { invoiceStatusActionSchema } from "@/lib/invoice-validations";
@@ -44,14 +45,22 @@ export async function POST(request: NextRequest, { params }: Props) {
   }
 
   const now = new Date();
-  const updated = await db.invoice.update({
-    where: { id },
-    data: {
-      status: transition.to,
-      ...(parsed.data.action === "approve" ? { approvedAt: now, approvedById: session!.user.id } : {}),
-      ...(parsed.data.action === "post" ? { postedAt: now, postedById: session!.user.id } : {}),
-    },
-    include: { customer: true, lines: { orderBy: { sortOrder: "asc" } } },
+  const updated = await db.$transaction(async (tx) => {
+    const invoiceUpdate = await tx.invoice.update({
+      where: { id },
+      data: {
+        status: transition.to,
+        ...(parsed.data.action === "approve" ? { approvedAt: now, approvedById: session!.user.id } : {}),
+        ...(parsed.data.action === "post" ? { postedAt: now, postedById: session!.user.id } : {}),
+      },
+      include: { customer: true, lines: { orderBy: { sortOrder: "asc" } } },
+    });
+
+    if (parsed.data.action === "post") {
+      await postInvoiceJournal(tx, invoiceUpdate);
+    }
+
+    return invoiceUpdate;
   });
 
   const { ip, userAgent } = await requestContext();

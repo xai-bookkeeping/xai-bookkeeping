@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser, requestContext, validationError } from "@/lib/api-utils";
+import { postExpensePaymentJournal } from "@/lib/accounting";
 import { logAuditEvent } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { expenseStatusActionSchema } from "@/lib/expense-validations";
@@ -54,13 +55,21 @@ export async function POST(request: NextRequest, { params }: Props) {
   }
 
   const now = new Date();
-  const updated = await db.expense.update({
-    where: { id },
-    data:
-      parsed.data.action === "approve"
-        ? { status: "APPROVED", approvedAt: now, approvedById: session!.user.id }
-        : { status: "PAID", paidAt: now },
-    include: { supplier: true },
+  const updated = await db.$transaction(async (tx) => {
+    const expenseUpdate = await tx.expense.update({
+      where: { id },
+      data:
+        parsed.data.action === "approve"
+          ? { status: "APPROVED", approvedAt: now, approvedById: session!.user.id }
+          : { status: "PAID", paidAt: now },
+      include: { supplier: true },
+    });
+
+    if (parsed.data.action === "markPaid") {
+      await postExpensePaymentJournal(tx, expenseUpdate);
+    }
+
+    return expenseUpdate;
   });
 
   const { ip, userAgent } = await requestContext();
