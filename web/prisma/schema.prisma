@@ -47,6 +47,8 @@ model User {
   payments            Payment[]
   expenses            Expense[]           @relation("ExpenseOwner")
   approvedExpenses    Expense[]           @relation("ExpenseApprover")
+  accounts            Account[]
+  journalEntries      JournalEntry[]
 
   @@index([status])
   @@index([emailVerified])
@@ -343,6 +345,67 @@ model Expense {
   @@map("xb_expenses")
 }
 
+model Account {
+  id          String        @id @default(cuid())
+  ownerId     String        @map("owner_id")
+  code        String
+  name        String
+  type        AccountType
+  status      AccountStatus @default(ACTIVE)
+  description String?
+  systemKey   String?       @map("system_key")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  deletedAt   DateTime?     @map("deleted_at")
+
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  journalLines JournalLine[]
+
+  @@unique([ownerId, code])
+  @@unique([ownerId, systemKey])
+  @@index([ownerId, type])
+  @@index([ownerId, status])
+  @@index([ownerId, deletedAt])
+  @@map("xb_accounts")
+}
+
+model JournalEntry {
+  id          String        @id @default(cuid())
+  ownerId     String        @map("owner_id")
+  entryNumber String        @map("entry_number")
+  entryDate   DateTime      @map("entry_date")
+  status      JournalStatus @default(POSTED)
+  sourceType  SourceType    @map("source_type")
+  sourceId    String?       @map("source_id")
+  memo        String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  owner User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  lines JournalLine[]
+
+  @@unique([ownerId, entryNumber])
+  @@index([ownerId, entryDate])
+  @@index([ownerId, sourceType, sourceId])
+  @@map("xb_journal_entries")
+}
+
+model JournalLine {
+  id             String   @id @default(cuid())
+  journalEntryId String   @map("journal_entry_id")
+  accountId      String   @map("account_id")
+  debit          Decimal  @default(0) @db.Decimal(12, 2)
+  credit         Decimal  @default(0) @db.Decimal(12, 2)
+  description    String?
+  sortOrder      Int      @default(0) @map("sort_order")
+
+  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  account      Account      @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@index([journalEntryId])
+  @@index([accountId])
+  @@map("xb_journal_lines")
+}
+
 enum Role {
   USER
   ADMIN
@@ -383,6 +446,33 @@ enum ExpenseStatus {
   DRAFT
   APPROVED
   PAID
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  EXPENSE
+}
+
+enum AccountStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum JournalStatus {
+  DRAFT
+  POSTED
+  REVERSED
+}
+
+enum SourceType {
+  MANUAL
+  INVOICE
+  PAYMENT
+  EXPENSE
+  SYSTEM
 }
 
 enum AuditAction {

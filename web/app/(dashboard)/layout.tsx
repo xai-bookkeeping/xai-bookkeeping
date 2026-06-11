@@ -70,6 +70,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
               Reports
             </Link>
             <Link
+              href="/accounting"
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+            >
+              Accounting
+            </Link>
+            <Link
               href="/audit"
               className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
             >
