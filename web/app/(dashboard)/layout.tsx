@@ -10,7 +10,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
     where: { id: session.user.id },
     select: {
       avatarUrl: true,
-      company: { select: { logoUrl: true, name: true, taxNumber: true } },
+      company: {
+        select: {
+          accentColor: true,
+          logoUrl: true,
+          name: true,
+          primaryColor: true,
+          secondaryColor: true,
+          taxNumber: true,
+        },
+      },
       companyName: true,
       email: true,
       firstName: true,
@@ -24,8 +33,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <AppShell
       company={{
+        accentColor: user.company?.accentColor ?? "#22c55e",
         logoUrl: user.company?.logoUrl ?? null,
         name: user.company?.name ?? user.companyName ?? session.user.companyName ?? "XAI Books workspace",
+        primaryColor: user.company?.primaryColor ?? "#0ea5e9",
+        secondaryColor: user.company?.secondaryColor ?? "#0f172a",
         taxNumber: user.company?.taxNumber ?? null,
       }}
       user={{

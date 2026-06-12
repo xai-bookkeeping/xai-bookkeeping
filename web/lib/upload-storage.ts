@@ -12,7 +12,14 @@ const imageExtensions: Record<string, string> = {
   "image/svg+xml": "svg",
 };
 
-type UploadKind = "avatars" | "company-logos";
+type UploadKind =
+  | "avatars"
+  | "company-covers"
+  | "company-logos"
+  | "customer-covers"
+  | "customer-logos"
+  | "supplier-covers"
+  | "supplier-logos";
 
 export async function storeImageUpload({
   file,
@@ -63,4 +70,7 @@ export async function deletePublicUpload(url: string | null | undefined): Promis
 }
 
 export const avatarTypes = ["image/jpeg", "image/png", "image/webp"];
+export const companyCoverTypes = ["image/jpeg", "image/png", "image/webp"];
 export const companyLogoTypes = ["image/jpeg", "image/png", "image/svg+xml"];
+export const partyCoverTypes = ["image/jpeg", "image/png", "image/webp"];
+export const partyLogoTypes = ["image/jpeg", "image/png", "image/svg+xml", "image/webp"];

@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import type { FormEvent } from "react";
-import { Mail, RefreshCw, Search, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { GitBranch, Mail, RefreshCw, Search, ShieldCheck, UserPlus, Users } from "lucide-react";
+import Link from "next/link";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -27,6 +28,32 @@ type ManagedUser = {
   createdAt: string;
 };
 
+type ApprovalDocumentType = "INVOICE" | "EXPENSE";
+
+type ApprovalRoute = {
+  active: boolean;
+  approverId: string | null;
+  approverRole: "ADMIN" | "ACCOUNTANT" | "APPROVER";
+  documentType: ApprovalDocumentType;
+  id: string;
+  maxAmount: number | null;
+  minAmount: number;
+  name: string;
+  priority: number;
+};
+
+type ApproverOption = {
+  email: string;
+  id: string;
+  name: string;
+  role: string;
+};
+
+type ApprovalRoutesResponse = {
+  approvers: ApproverOption[];
+  routes: ApprovalRoute[];
+};
+
 type UsersResponse = {
   page: number;
   pageSize: number;
@@ -36,6 +63,7 @@ type UsersResponse = {
 
 const roles: ManagedRole[] = ["ADMIN", "ACCOUNTANT", "APPROVER", "VIEWER"];
 const statuses: ManagedStatus[] = ["PENDING", "ACTIVE", "SUSPENDED", "DISABLED"];
+const approverRoles = ["APPROVER", "ADMIN", "ACCOUNTANT"] as const;
 
 function formatDate(value: string | null) {
   if (!value) return "Never";
@@ -69,6 +97,8 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<ManagedUser | null>(initialData.users[0] ?? null);
+  const [approvalRoutes, setApprovalRoutes] = useState<ApprovalRoute[]>([]);
+  const [approvers, setApprovers] = useState<ApproverOption[]>([]);
   const [mode, setMode] = useState<"invite" | "create">("invite");
   const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -80,6 +110,16 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
     status: "ACTIVE" as ManagedStatus,
     phone: "",
     jobTitle: "",
+  });
+  const [routeDraft, setRouteDraft] = useState({
+    active: true,
+    approverId: "",
+    approverRole: "APPROVER" as ApprovalRoute["approverRole"],
+    documentType: "INVOICE" as ApprovalDocumentType,
+    maxAmount: "",
+    minAmount: "0",
+    name: "Standard approval",
+    priority: "100",
   });
 
   const totalPages = Math.max(1, Math.ceil(data.total / data.pageSize));
@@ -104,6 +144,18 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
       }
     });
   }, [page, query, role, status]);
+
+  useEffect(() => {
+    startTransition(async () => {
+      try {
+        const result = await requestJson<ApprovalRoutesResponse>("/api/approval-routes");
+        setApprovalRoutes(result.routes);
+        setApprovers(result.approvers);
+      } catch {
+        // Non-fatal for user management; route errors surface when saving routes.
+      }
+    });
+  }, []);
 
   const counts = useMemo(
     () => ({
@@ -193,6 +245,46 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
     });
   }
 
+  function createApprovalRoute(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setNotice(null);
+    startTransition(async () => {
+      try {
+        const result = await requestJson<{ route: ApprovalRoute }>("/api/approval-routes", {
+          body: JSON.stringify({
+            ...routeDraft,
+            approverId: routeDraft.approverId || null,
+            maxAmount: routeDraft.maxAmount ? Number(routeDraft.maxAmount) : null,
+            minAmount: Number(routeDraft.minAmount || 0),
+            priority: Number(routeDraft.priority || 100),
+          }),
+          method: "POST",
+        });
+        setApprovalRoutes((current) => [...current, result.route]);
+        setNotice({ type: "success", text: "Approval route created." });
+      } catch (error) {
+        setNotice({ type: "error", text: error instanceof Error ? error.message : "Route save failed." });
+      }
+    });
+  }
+
+  function disableApprovalRoute(route: ApprovalRoute) {
+    setNotice(null);
+    startTransition(async () => {
+      try {
+        const result = await requestJson<{ route: ApprovalRoute }>(`/api/approval-routes/${route.id}`, {
+          method: "DELETE",
+        });
+        setApprovalRoutes((current) =>
+          current.map((item) => (item.id === route.id ? result.route : item)),
+        );
+        setNotice({ type: "success", text: "Approval route disabled." });
+      } catch (error) {
+        setNotice({ type: "error", text: error instanceof Error ? error.message : "Route update failed." });
+      }
+    });
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -275,6 +367,7 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
                   <th className="px-4 py-3 font-semibold">Phone</th>
                   <th className="px-4 py-3 font-semibold">Last login</th>
                   <th className="px-4 py-3 font-semibold">Joined</th>
+                  <th className="px-4 py-3 font-semibold">Profile</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -315,6 +408,11 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
                     <td className="px-4 py-4 text-slate-600">{user.phone || "None"}</td>
                     <td className="px-4 py-4 text-slate-600">{formatDate(user.lastLoginAt)}</td>
                     <td className="px-4 py-4 text-slate-600">{formatDate(user.createdAt)}</td>
+                    <td className="px-4 py-4">
+                      <Link href={`/users/${user.id}`} onClick={(event) => event.stopPropagation()} className="font-semibold text-sky-700 hover:text-sky-800">
+                        Open
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -341,6 +439,84 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
         </section>
 
         <div className="space-y-6">
+          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+                <GitBranch className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-slate-950">Approval routing</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Route invoices and expenses by amount to an approver role or named approver.
+                </p>
+              </div>
+            </div>
+            <form onSubmit={createApprovalRoute} className="mt-5 space-y-3">
+              <Input label="Route name" value={routeDraft.name} onChange={(e) => setRouteDraft({ ...routeDraft, name: e.target.value })} />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="space-y-1.5 text-sm font-medium text-slate-700">
+                  Document
+                  <select className="h-10 w-full rounded-xl border border-slate-200 px-3" value={routeDraft.documentType} onChange={(e) => setRouteDraft({ ...routeDraft, documentType: e.target.value as ApprovalDocumentType })}>
+                    <option value="INVOICE">Invoice</option>
+                    <option value="EXPENSE">Expense</option>
+                  </select>
+                </label>
+                <Input label="Priority" type="number" min="1" value={routeDraft.priority} onChange={(e) => setRouteDraft({ ...routeDraft, priority: e.target.value })} />
+                <Input label="Minimum AED" type="number" min="0" step="0.01" value={routeDraft.minAmount} onChange={(e) => setRouteDraft({ ...routeDraft, minAmount: e.target.value })} />
+                <Input label="Maximum AED" type="number" min="0" step="0.01" value={routeDraft.maxAmount} placeholder="No limit" onChange={(e) => setRouteDraft({ ...routeDraft, maxAmount: e.target.value })} />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="space-y-1.5 text-sm font-medium text-slate-700">
+                  Approver role
+                  <select className="h-10 w-full rounded-xl border border-slate-200 px-3" value={routeDraft.approverRole} onChange={(e) => setRouteDraft({ ...routeDraft, approverRole: e.target.value as ApprovalRoute["approverRole"] })}>
+                    {approverRoles.map((item) => <option key={item} value={item}>{item}</option>)}
+                  </select>
+                </label>
+                <label className="space-y-1.5 text-sm font-medium text-slate-700">
+                  Named approver
+                  <select className="h-10 w-full rounded-xl border border-slate-200 px-3" value={routeDraft.approverId} onChange={(e) => setRouteDraft({ ...routeDraft, approverId: e.target.value })}>
+                    <option value="">Any matching role</option>
+                    {approvers.map((item) => <option key={item.id} value={item.id}>{item.name} ({item.role})</option>)}
+                  </select>
+                </label>
+              </div>
+              <Button type="submit" loading={isPending} fullWidth>Create approval route</Button>
+            </form>
+            <div className="mt-5 divide-y divide-slate-100 rounded-xl border border-slate-200">
+              {approvalRoutes.map((route) => {
+                const approver = approvers.find((item) => item.id === route.approverId);
+                return (
+                  <div key={route.id} className="space-y-2 p-3 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-slate-950">{route.name}</p>
+                        <p className="text-xs text-slate-500">
+                          {route.documentType} | AED {route.minAmount} - {route.maxAmount ?? "No limit"}
+                        </p>
+                      </div>
+                      <span className={cn("rounded-full px-2 py-1 text-xs font-semibold", route.active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500")}>
+                        {route.active ? "Active" : "Disabled"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs text-slate-500">
+                        Approver: {approver?.name ?? `Any ${route.approverRole}`}
+                      </p>
+                      {route.active ? (
+                        <Button size="sm" variant="secondary" onClick={() => disableApprovalRoute(route)}>
+                          Disable
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+              {approvalRoutes.length === 0 ? (
+                <p className="p-3 text-sm text-slate-500">No approval routes yet.</p>
+              ) : null}
+            </div>
+          </section>
+
           <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex gap-2">
               <Button size="sm" variant={mode === "invite" ? "primary" : "secondary"} onClick={() => setMode("invite")}>

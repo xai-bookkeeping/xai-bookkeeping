@@ -61,7 +61,7 @@ export default async function DashboardPage() {
     db.user.findUnique({
       where: { id: ownerId },
       select: {
-        company: { select: { currency: true, logoUrl: true, name: true, taxNumber: true } },
+        company: { select: { coverImageUrl: true, currency: true, logoUrl: true, name: true, taxNumber: true } },
         companyName: true,
         firstName: true,
         lastName: true,
@@ -234,6 +234,7 @@ export default async function DashboardPage() {
       }))}
       company={{
         currency: user?.company?.currency ?? "AED",
+        coverImageUrl: user?.company?.coverImageUrl ?? null,
         logoUrl: user?.company?.logoUrl ?? null,
         name: user?.company?.name ?? user?.companyName ?? session.user.companyName ?? "XAI Books workspace",
         taxNumber: user?.company?.taxNumber ?? null,

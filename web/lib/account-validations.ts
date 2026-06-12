@@ -15,6 +15,11 @@ const phoneSchema = z
   .optional()
   .or(z.literal(""));
 
+const hexColorSchema = z
+  .string()
+  .trim()
+  .regex(/^#[0-9a-fA-F]{6}$/, "Enter a valid hex color");
+
 export const profileUpdateSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(80),
   lastName: z.string().trim().min(1, "Last name is required").max(80),
@@ -40,6 +45,9 @@ export const companyUpdateSchema = z.object({
   address: z.string().trim().max(240).optional().or(z.literal("")),
   city: z.string().trim().max(120).optional().or(z.literal("")),
   country: z.string().trim().min(2).max(80),
+  primaryColor: hexColorSchema.default("#0ea5e9"),
+  secondaryColor: hexColorSchema.default("#0f172a"),
+  accentColor: hexColorSchema.default("#22c55e"),
   taxNumber: z.string().trim().max(80).optional().or(z.literal("")),
   currency: z.string().trim().min(3).max(3),
   timezone: z.string().trim().min(1).max(80),

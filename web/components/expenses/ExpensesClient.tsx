@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/cn";
 
-type ExpenseStatus = "DRAFT" | "APPROVED" | "PAID";
+type ExpenseStatus = "DRAFT" | "SUBMITTED" | "APPROVED" | "PAID";
 
 type SupplierOption = {
   id: string;
@@ -45,7 +45,7 @@ type ExpenseDraft = {
   attachmentUrl: string;
 };
 
-const statuses: ExpenseStatus[] = ["DRAFT", "APPROVED", "PAID"];
+const statuses: ExpenseStatus[] = ["DRAFT", "SUBMITTED", "APPROVED", "PAID"];
 const defaultCategories = ["Office", "Travel", "Meals", "Software", "Rent", "Utilities", "Professional fees", "Other"];
 
 function today() {
@@ -201,7 +201,7 @@ export function ExpensesClient({
     });
   }
 
-  function statusAction(action: "approve" | "markPaid") {
+  function statusAction(action: "submit" | "approve" | "markPaid") {
     if (!selected) return;
     setNotice(null);
     startTransition(async () => {
@@ -343,7 +343,8 @@ export function ExpensesClient({
             <Button type="submit" loading={isPending} disabled={suppliers.length === 0 || (selected?.status !== "DRAFT" && Boolean(selected))}>
               {selected ? "Save draft" : "Create draft"}
             </Button>
-            {selected?.status === "DRAFT" && canApprove ? <Button type="button" variant="secondary" onClick={() => statusAction("approve")}><CheckCircle2 className="h-4 w-4" /> Approve</Button> : null}
+            {selected?.status === "DRAFT" ? <Button type="button" variant="secondary" onClick={() => statusAction("submit")}><CheckCircle2 className="h-4 w-4" /> Submit</Button> : null}
+            {selected?.status === "SUBMITTED" && canApprove ? <Button type="button" variant="secondary" onClick={() => statusAction("approve")}><CheckCircle2 className="h-4 w-4" /> Approve</Button> : null}
             {selected?.status === "APPROVED" ? <Button type="button" variant="secondary" onClick={() => statusAction("markPaid")}>Mark paid</Button> : null}
           </div>
         </form>

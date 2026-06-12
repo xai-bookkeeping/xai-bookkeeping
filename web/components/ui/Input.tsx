@@ -33,6 +33,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const [showPassword, setShowPassword] = useState(false);
     const isPassword = type === "password";
     const inputType = isPassword ? (showPassword ? "text" : "password") : type;
+    const inputProps = {
+      ...props,
+      value: props.value === null ? "" : props.value,
+    };
 
     return (
       <div className={cn("space-y-1.5", containerClassName)}>
@@ -65,7 +69,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               (isPassword || rightElement) && "pr-10",
               className,
             )}
-            {...props}
+            {...inputProps}
           />
           {isPassword && (
             <button

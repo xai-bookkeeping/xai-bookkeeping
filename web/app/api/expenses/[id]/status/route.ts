@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser, requestContext, validationError } from "@/lib/api-utils";
 import { postExpensePaymentJournal } from "@/lib/accounting";
+import { canApproveRoutedDocument, findApprovalRoute, routeAssignment } from "@/lib/approval-routing";
 import { logAuditEvent } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { expenseStatusActionSchema } from "@/lib/expense-validations";
+import { canSubmitForApproval } from "@/lib/permissions";
 
 interface Props {
   params: Promise<{ id: string }>;
-}
-
-function canApprove(role: string) {
-  return role === "ADMIN" || role === "APPROVER";
 }
 
 function serializeExpense(expense: any) {
@@ -37,16 +35,47 @@ export async function POST(request: NextRequest, { params }: Props) {
   const { id } = await params;
   const expense = await db.expense.findFirst({
     where: { id, ownerId: session!.user.id, deletedAt: null },
-    select: { id: true, status: true, category: true },
+    select: {
+      amount: true,
+      approvalRouteId: true,
+      assignedApproverId: true,
+      category: true,
+      id: true,
+      ownerId: true,
+      status: true,
+    },
   });
   if (!expense) return NextResponse.json({ error: "Expense not found." }, { status: 404 });
 
-  if (parsed.data.action === "approve") {
+  if (parsed.data.action === "submit") {
     if (expense.status !== "DRAFT") {
-      return NextResponse.json({ error: "Only draft expenses can be approved." }, { status: 400 });
+      return NextResponse.json({ error: "Only draft expenses can be submitted." }, { status: 400 });
     }
-    if (!canApprove(session!.user.role)) {
-      return NextResponse.json({ error: "Only Admin or Approver can approve expenses." }, { status: 403 });
+    if (!canSubmitForApproval(session!.user.role)) {
+      return NextResponse.json({ error: "Only Admin or Accountant can submit expenses." }, { status: 403 });
+    }
+  }
+
+  if (parsed.data.action === "approve") {
+    if (expense.status !== "SUBMITTED") {
+      return NextResponse.json({ error: "Only submitted expenses can be approved." }, { status: 400 });
+    }
+    const route = expense.approvalRouteId
+      ? await db.approvalRoute.findFirst({
+          where: { id: expense.approvalRouteId, ownerId: session!.user.id },
+        })
+      : null;
+    const allowed = canApproveRoutedDocument({
+      assignedApproverId: expense.assignedApproverId,
+      currentUserId: session!.user.id,
+      currentUserRole: session!.user.role,
+      route,
+    });
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "You are not assigned to approve this expense." },
+        { status: 403 },
+      );
     }
   }
 
@@ -56,12 +85,23 @@ export async function POST(request: NextRequest, { params }: Props) {
 
   const now = new Date();
   const updated = await db.$transaction(async (tx) => {
+    const route =
+      parsed.data.action === "submit"
+        ? await findApprovalRoute({
+            amount: Number(expense.amount),
+            documentType: "EXPENSE",
+            ownerId: session!.user.id,
+            tx,
+          })
+        : null;
     const expenseUpdate = await tx.expense.update({
       where: { id },
       data:
-        parsed.data.action === "approve"
-          ? { status: "APPROVED", approvedAt: now, approvedById: session!.user.id }
-          : { status: "PAID", paidAt: now },
+        parsed.data.action === "submit"
+          ? { status: "SUBMITTED", submittedAt: now, ...routeAssignment(route) }
+          : parsed.data.action === "approve"
+            ? { status: "APPROVED", approvedAt: now, approvedById: session!.user.id }
+            : { status: "PAID", paidAt: now },
       include: { supplier: true },
     });
 
@@ -74,7 +114,12 @@ export async function POST(request: NextRequest, { params }: Props) {
 
   const { ip, userAgent } = await requestContext();
   await logAuditEvent({
-    action: parsed.data.action === "approve" ? "EXPENSE_APPROVED" : "EXPENSE_PAID",
+    action:
+      parsed.data.action === "submit"
+        ? "EXPENSE_SUBMITTED"
+        : parsed.data.action === "approve"
+          ? "EXPENSE_APPROVED"
+          : "EXPENSE_PAID",
     email: session!.user.email,
     ip,
     userAgent,
@@ -86,6 +131,21 @@ export async function POST(request: NextRequest, { params }: Props) {
       to: updated.status,
     },
   });
+
+  if (parsed.data.action === "submit" && updated.approvalRouteId) {
+    await logAuditEvent({
+      action: "EXPENSE_ASSIGNED_FOR_APPROVAL",
+      email: session!.user.email,
+      ip,
+      userAgent,
+      userId: session!.user.id,
+      metadata: {
+        assignedApproverId: updated.assignedApproverId,
+        expenseId: id,
+        routeId: updated.approvalRouteId,
+      },
+    });
+  }
 
   return NextResponse.json({ expense: serializeExpense(updated) });
 }

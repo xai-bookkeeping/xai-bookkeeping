@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import type { FormEvent } from "react";
 import { Building2, Mail, Phone, Search, Trash2, UserRoundPlus } from "lucide-react";
+import Link from "next/link";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -236,6 +237,7 @@ export function CustomersClient({ initialData }: { initialData: CustomersRespons
                   <th className="px-4 py-3 font-semibold">Phone</th>
                   <th className="px-4 py-3 font-semibold">TRN</th>
                   <th className="px-4 py-3 font-semibold">Updated</th>
+                  <th className="px-4 py-3 font-semibold">Profile</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -266,6 +268,11 @@ export function CustomersClient({ initialData }: { initialData: CustomersRespons
                     <td className="px-4 py-4 text-slate-600">{customer.phone || "None"}</td>
                     <td className="px-4 py-4 text-slate-600">{customer.trn || "None"}</td>
                     <td className="px-4 py-4 text-slate-600">{formatDate(customer.updatedAt)}</td>
+                    <td className="px-4 py-4">
+                      <Link href={`/customers/${customer.id}`} onClick={(event) => event.stopPropagation()} className="font-semibold text-sky-700 hover:text-sky-800">
+                        Open
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

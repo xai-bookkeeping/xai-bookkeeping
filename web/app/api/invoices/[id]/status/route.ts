@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser, requestContext, validationError } from "@/lib/api-utils";
 import { postInvoiceJournal } from "@/lib/accounting";
+import { canApproveRoutedDocument, findApprovalRoute, routeAssignment } from "@/lib/approval-routing";
 import { logAuditEvent } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { invoiceStatusActionSchema } from "@/lib/invoice-validations";
+import { canPostFinanceRecords, canSubmitForApproval } from "@/lib/permissions";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -14,10 +16,6 @@ const transitionMap = {
   approve: { from: "SUBMITTED", to: "APPROVED", audit: "INVOICE_APPROVED" },
   post: { from: "APPROVED", to: "POSTED", audit: "INVOICE_POSTED" },
 } as const;
-
-function canApprove(role: string) {
-  return role === "ADMIN" || role === "APPROVER";
-}
 
 export async function POST(request: NextRequest, { params }: Props) {
   const { error, session } = await requireUser();
@@ -31,7 +29,15 @@ export async function POST(request: NextRequest, { params }: Props) {
   const transition = transitionMap[parsed.data.action];
   const invoice = await db.invoice.findFirst({
     where: { id, ownerId: session!.user.id, deletedAt: null },
-    select: { id: true, status: true, invoiceNumber: true },
+    select: {
+      approvalRouteId: true,
+      assignedApproverId: true,
+      id: true,
+      invoiceNumber: true,
+      ownerId: true,
+      status: true,
+      total: true,
+    },
   });
   if (!invoice) return NextResponse.json({ error: "Invoice not found." }, { status: 404 });
   if (invoice.status !== transition.from) {
@@ -40,16 +46,48 @@ export async function POST(request: NextRequest, { params }: Props) {
       { status: 400 },
     );
   }
-  if (parsed.data.action === "approve" && !canApprove(session!.user.role)) {
-    return NextResponse.json({ error: "Only Admin or Approver can approve invoices." }, { status: 403 });
+  if (parsed.data.action === "submit" && !canSubmitForApproval(session!.user.role)) {
+    return NextResponse.json({ error: "Only Admin or Accountant can submit invoices." }, { status: 403 });
+  }
+  if (parsed.data.action === "post" && !canPostFinanceRecords(session!.user.role)) {
+    return NextResponse.json({ error: "Only Admin or Accountant can post invoices." }, { status: 403 });
+  }
+  if (parsed.data.action === "approve") {
+    const route = invoice.approvalRouteId
+      ? await db.approvalRoute.findFirst({
+          where: { id: invoice.approvalRouteId, ownerId: session!.user.id },
+        })
+      : null;
+    const allowed = canApproveRoutedDocument({
+      assignedApproverId: invoice.assignedApproverId,
+      currentUserId: session!.user.id,
+      currentUserRole: session!.user.role,
+      route,
+    });
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "You are not assigned to approve this invoice." },
+        { status: 403 },
+      );
+    }
   }
 
   const now = new Date();
   const updated = await db.$transaction(async (tx) => {
+    const route =
+      parsed.data.action === "submit"
+        ? await findApprovalRoute({
+            amount: Number(invoice.total),
+            documentType: "INVOICE",
+            ownerId: session!.user.id,
+            tx,
+          })
+        : null;
     const invoiceUpdate = await tx.invoice.update({
       where: { id },
       data: {
         status: transition.to,
+        ...(parsed.data.action === "submit" ? { submittedAt: now, ...routeAssignment(route) } : {}),
         ...(parsed.data.action === "approve" ? { approvedAt: now, approvedById: session!.user.id } : {}),
         ...(parsed.data.action === "post" ? { postedAt: now, postedById: session!.user.id } : {}),
       },
@@ -77,6 +115,22 @@ export async function POST(request: NextRequest, { params }: Props) {
       to: transition.to,
     },
   });
+
+  if (parsed.data.action === "submit" && updated.approvalRouteId) {
+    await logAuditEvent({
+      action: "INVOICE_ASSIGNED_FOR_APPROVAL",
+      email: session!.user.email,
+      ip,
+      userAgent,
+      userId: session!.user.id,
+      metadata: {
+        assignedApproverId: updated.assignedApproverId,
+        invoiceId: id,
+        invoiceNumber: invoice.invoiceNumber,
+        routeId: updated.approvalRouteId,
+      },
+    });
+  }
 
   return NextResponse.json({
     invoice: {

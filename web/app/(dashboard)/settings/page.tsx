@@ -6,9 +6,14 @@ import { SettingsClient } from "@/components/settings/SettingsClient";
 
 export const metadata: Metadata = { title: "Account settings" };
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const session = await auth();
   if (!session || session.sessionExpired) redirect("/login");
+  const { tab } = await searchParams;
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
@@ -31,6 +36,7 @@ export default async function SettingsPage() {
   return (
     <SettingsClient
       activeSessionId={session.activeSessionId ?? ""}
+      initialActiveTab={tab === "company" ? "company" : undefined}
       initialActivity={user.activityLogs.map((item) => ({
         action: item.action,
         createdAt: item.createdAt.toISOString(),
@@ -41,8 +47,12 @@ export default async function SettingsPage() {
       initialCompany={{
         address: user.company?.address ?? "",
         city: user.company?.city ?? "",
+        coverImageUrl: user.company?.coverImageUrl ?? "",
         country: user.company?.country ?? user.country,
         currency: user.company?.currency ?? "AED",
+        primaryColor: user.company?.primaryColor ?? "#0ea5e9",
+        secondaryColor: user.company?.secondaryColor ?? "#0f172a",
+        accentColor: user.company?.accentColor ?? "#22c55e",
         email: user.company?.email ?? user.email,
         logoUrl: user.company?.logoUrl ?? "",
         name: user.company?.name ?? user.companyName ?? "",

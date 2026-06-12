@@ -9,6 +9,7 @@ import {
   Clock3,
   FilePlus2,
   FileText,
+  ImagePlus,
   Plus,
   ReceiptText,
   TrendingDown,
@@ -58,6 +59,7 @@ type RecentItem = {
 type DashboardProps = {
   activity: ActivityItem[];
   company: {
+    coverImageUrl: string | null;
     currency: string;
     logoUrl: string | null;
     name: string;
@@ -406,17 +408,34 @@ export function FinancialDashboardClient({
   return (
     <div className="space-y-6">
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="grid gap-6 p-6 lg:grid-cols-[1fr_360px]">
-          <div className="flex gap-4">
-            {company.logoUrl ? (
-              <img src={company.logoUrl} alt="" className="h-14 w-14 rounded-2xl border border-slate-200 object-contain p-1" />
-            ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-500 text-sm font-black text-white">
-                XB
-              </div>
-            )}
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-sky-600">{greeting()}, {user.firstName}</p>
+        <div className="relative min-h-52">
+          {company.coverImageUrl ? (
+            <img src={company.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          ) : (
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,var(--secondary-color,#0f172a)_0%,var(--primary-color,#0ea5e9)_58%,var(--accent-color,#22c55e)_100%)]" />
+          )}
+          <div className="absolute inset-0 bg-slate-950/30" />
+          <Link
+            href="/settings?tab=company"
+            className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-lg bg-white/95 px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm ring-1 ring-slate-200 transition hover:bg-white"
+          >
+            <ImagePlus className="h-4 w-4" />
+            Change cover
+          </Link>
+        </div>
+        <div className="relative grid gap-6 px-6 pb-6 lg:grid-cols-[1fr_360px]">
+          <div className="-mt-12 flex gap-4">
+            <div className="shrink-0">
+              {company.logoUrl ? (
+                <img src={company.logoUrl} alt="" className="h-24 w-24 rounded-3xl border-4 border-white bg-white object-contain p-2 shadow-sm" />
+              ) : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-3xl border-4 border-white bg-[var(--primary-color,#0ea5e9)] text-xl font-black text-white shadow-sm">
+                  XB
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 pt-14">
+              <p className="text-sm font-semibold uppercase tracking-wide text-[var(--primary-color,#0ea5e9)]">{greeting()}, {user.firstName}</p>
               <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">Your finance workspace is ready.</h1>
               <div className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2 xl:grid-cols-4">
                 <div><span className="text-slate-400">Role</span><p className="font-semibold text-slate-900">{roleLabel(user.role)}</p></div>
@@ -426,7 +445,7 @@ export function FinancialDashboardClient({
               </div>
             </div>
           </div>
-          <div className="rounded-2xl bg-slate-950 p-5 text-white">
+          <div className="-mt-16 rounded-2xl bg-slate-950 p-5 text-white shadow-xl ring-1 ring-white/10 lg:self-start">
             <p className="text-sm font-semibold text-slate-300">Work requiring attention</p>
             <p className="mt-3 text-4xl font-bold">{totalPending}</p>
             <p className="mt-2 text-sm text-slate-300">Submitted invoices, draft expenses, and outstanding posted invoices.</p>

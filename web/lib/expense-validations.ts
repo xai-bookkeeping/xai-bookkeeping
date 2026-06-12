@@ -24,7 +24,7 @@ export const expenseMutationSchema = z.object({
 });
 
 export const expenseStatusActionSchema = z.object({
-  action: z.enum(["approve", "markPaid"]),
+  action: z.enum(["submit", "approve", "markPaid"]),
 });
 
 export type ExpenseMutationInput = z.infer<typeof expenseMutationSchema>;

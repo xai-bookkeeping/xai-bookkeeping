@@ -53,6 +53,7 @@ model User {
   approvedExpenses    Expense[]            @relation("ExpenseApprover")
   accounts            Account[]
   journalEntries      JournalEntry[]
+  approvalRoutes      ApprovalRoute[]
 
   @@index([status])
   @@index([emailVerified])
@@ -63,21 +64,25 @@ model User {
 }
 
 model Company {
-  id        String   @id @default(cuid())
-  ownerId   String   @unique @map("owner_id")
-  name      String
-  logoUrl   String?  @map("logo_url")
-  website   String?
-  email     String?
-  phone     String?
-  address   String?
-  city      String?
-  country   String   @default("AE")
-  taxNumber String?  @map("tax_number")
-  currency  String   @default("AED")
-  timezone  String   @default("Asia/Dubai")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(cuid())
+  ownerId        String   @unique @map("owner_id")
+  name           String
+  logoUrl        String?  @map("logo_url")
+  coverImageUrl  String?  @map("cover_image_url")
+  primaryColor   String   @default("#0ea5e9") @map("primary_color")
+  secondaryColor String   @default("#0f172a") @map("secondary_color")
+  accentColor    String   @default("#22c55e") @map("accent_color")
+  website        String?
+  email          String?
+  phone          String?
+  address        String?
+  city           String?
+  country        String   @default("AE")
+  taxNumber      String?  @map("tax_number")
+  currency       String   @default("AED")
+  timezone       String   @default("Asia/Dubai")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
@@ -205,10 +210,33 @@ model ActivityLog {
   @@map("xb_activity_logs")
 }
 
+model ApprovalRoute {
+  id           String               @id @default(cuid())
+  ownerId      String               @map("owner_id")
+  documentType ApprovalDocumentType @map("document_type")
+  name         String
+  minAmount    Decimal              @default(0) @map("min_amount") @db.Decimal(12, 2)
+  maxAmount    Decimal?             @map("max_amount") @db.Decimal(12, 2)
+  approverRole Role                 @default(APPROVER) @map("approver_role")
+  approverId   String?              @map("approver_id")
+  priority     Int                  @default(100)
+  active       Boolean              @default(true)
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, documentType, active, priority])
+  @@index([approverId])
+  @@map("xb_approval_routes")
+}
+
 model Customer {
   id            String    @id @default(cuid())
   ownerId       String    @map("owner_id")
   name          String
+  logoUrl       String?   @map("logo_url")
+  coverImageUrl String?   @map("cover_image_url")
   contactPerson String?   @map("contact_person")
   email         String?
   phone         String?
@@ -231,6 +259,8 @@ model Supplier {
   id            String    @id @default(cuid())
   ownerId       String    @map("owner_id")
   name          String
+  logoUrl       String?   @map("logo_url")
+  coverImageUrl String?   @map("cover_image_url")
   contactPerson String?   @map("contact_person")
   email         String?
   phone         String?
@@ -250,25 +280,28 @@ model Supplier {
 }
 
 model Invoice {
-  id            String        @id @default(cuid())
-  ownerId       String        @map("owner_id")
-  customerId    String        @map("customer_id")
-  invoiceNumber String        @map("invoice_number")
-  status        InvoiceStatus @default(DRAFT)
-  issueDate     DateTime      @map("issue_date")
-  dueDate       DateTime?     @map("due_date")
-  notes         String?
-  subtotal      Decimal       @default(0) @db.Decimal(12, 2)
-  vatTotal      Decimal       @default(0) @map("vat_total") @db.Decimal(12, 2)
-  total         Decimal       @default(0) @db.Decimal(12, 2)
-  approvedById  String?       @map("approved_by_id")
-  approvedAt    DateTime?     @map("approved_at")
-  postedById    String?       @map("posted_by_id")
-  postedAt      DateTime?     @map("posted_at")
-  paidAt        DateTime?     @map("paid_at")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-  deletedAt     DateTime?     @map("deleted_at")
+  id                 String        @id @default(cuid())
+  ownerId            String        @map("owner_id")
+  customerId         String        @map("customer_id")
+  invoiceNumber      String        @map("invoice_number")
+  status             InvoiceStatus @default(DRAFT)
+  issueDate          DateTime      @map("issue_date")
+  dueDate            DateTime?     @map("due_date")
+  notes              String?
+  subtotal           Decimal       @default(0) @db.Decimal(12, 2)
+  vatTotal           Decimal       @default(0) @map("vat_total") @db.Decimal(12, 2)
+  total              Decimal       @default(0) @db.Decimal(12, 2)
+  approvedById       String?       @map("approved_by_id")
+  approvalRouteId    String?       @map("approval_route_id")
+  assignedApproverId String?       @map("assigned_approver_id")
+  submittedAt        DateTime?     @map("submitted_at")
+  approvedAt         DateTime?     @map("approved_at")
+  postedById         String?       @map("posted_by_id")
+  postedAt           DateTime?     @map("posted_at")
+  paidAt             DateTime?     @map("paid_at")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  deletedAt          DateTime?     @map("deleted_at")
 
   owner      User          @relation("InvoiceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   customer   Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
@@ -324,21 +357,24 @@ model Payment {
 }
 
 model Expense {
-  id            String        @id @default(cuid())
-  ownerId       String        @map("owner_id")
-  supplierId    String        @map("supplier_id")
-  category      String
-  amount        Decimal       @db.Decimal(12, 2)
-  expenseDate   DateTime      @map("expense_date")
-  notes         String?
-  attachmentUrl String?       @map("attachment_url")
-  status        ExpenseStatus @default(DRAFT)
-  approvedById  String?       @map("approved_by_id")
-  approvedAt    DateTime?     @map("approved_at")
-  paidAt        DateTime?     @map("paid_at")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-  deletedAt     DateTime?     @map("deleted_at")
+  id                 String        @id @default(cuid())
+  ownerId            String        @map("owner_id")
+  supplierId         String        @map("supplier_id")
+  category           String
+  amount             Decimal       @db.Decimal(12, 2)
+  expenseDate        DateTime      @map("expense_date")
+  notes              String?
+  attachmentUrl      String?       @map("attachment_url")
+  status             ExpenseStatus @default(DRAFT)
+  approvedById       String?       @map("approved_by_id")
+  approvalRouteId    String?       @map("approval_route_id")
+  assignedApproverId String?       @map("assigned_approver_id")
+  submittedAt        DateTime?     @map("submitted_at")
+  approvedAt         DateTime?     @map("approved_at")
+  paidAt             DateTime?     @map("paid_at")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  deletedAt          DateTime?     @map("deleted_at")
 
   owner      User     @relation("ExpenseOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
@@ -439,6 +475,11 @@ enum AuthProvider {
   EMAIL_AND_GOOGLE
 }
 
+enum ApprovalDocumentType {
+  INVOICE
+  EXPENSE
+}
+
 enum InvoiceStatus {
   DRAFT
   SUBMITTED
@@ -456,6 +497,7 @@ enum PaymentMethod {
 
 enum ExpenseStatus {
   DRAFT
+  SUBMITTED
   APPROVED
   PAID
 }
@@ -500,6 +542,8 @@ enum AuditAction {
   AVATAR_UPDATED
   AVATAR_REMOVED
   COMPANY_UPDATED
+  COMPANY_COVER_UPDATED
+  COMPANY_COVER_REMOVED
   COMPANY_LOGO_UPDATED
   COMPANY_LOGO_REMOVED
   PASSWORD_CHANGED
@@ -519,11 +563,25 @@ enum AuditAction {
   GOOGLE_ACCOUNT_CONNECTED
   GOOGLE_ACCOUNT_DISCONNECTED
   ONBOARDING_COMPLETED
+  APPROVAL_ROUTE_CREATED
+  APPROVAL_ROUTE_UPDATED
+  APPROVAL_ROUTE_DELETED
+  INVOICE_ASSIGNED_FOR_APPROVAL
+  EXPENSE_SUBMITTED
+  EXPENSE_ASSIGNED_FOR_APPROVAL
   CUSTOMER_CREATED
   CUSTOMER_UPDATED
+  CUSTOMER_COVER_UPDATED
+  CUSTOMER_COVER_REMOVED
+  CUSTOMER_LOGO_UPDATED
+  CUSTOMER_LOGO_REMOVED
   CUSTOMER_DELETED
   SUPPLIER_CREATED
   SUPPLIER_UPDATED
+  SUPPLIER_COVER_UPDATED
+  SUPPLIER_COVER_REMOVED
+  SUPPLIER_LOGO_UPDATED
+  SUPPLIER_LOGO_REMOVED
   SUPPLIER_DELETED
   INVOICE_CREATED
   INVOICE_UPDATED

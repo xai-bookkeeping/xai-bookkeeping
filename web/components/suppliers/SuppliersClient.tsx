@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import type { FormEvent } from "react";
 import { Mail, Phone, Search, Store, Trash2, Truck } from "lucide-react";
+import Link from "next/link";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -236,6 +237,7 @@ export function SuppliersClient({ initialData }: { initialData: SuppliersRespons
                   <th className="px-4 py-3 font-semibold">Phone</th>
                   <th className="px-4 py-3 font-semibold">TRN</th>
                   <th className="px-4 py-3 font-semibold">Updated</th>
+                  <th className="px-4 py-3 font-semibold">Profile</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -266,6 +268,11 @@ export function SuppliersClient({ initialData }: { initialData: SuppliersRespons
                     <td className="px-4 py-4 text-slate-600">{supplier.phone || "None"}</td>
                     <td className="px-4 py-4 text-slate-600">{supplier.trn || "None"}</td>
                     <td className="px-4 py-4 text-slate-600">{formatDate(supplier.updatedAt)}</td>
+                    <td className="px-4 py-4">
+                      <Link href={`/suppliers/${supplier.id}`} onClick={(event) => event.stopPropagation()} className="font-semibold text-sky-700 hover:text-sky-800">
+                        Open
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

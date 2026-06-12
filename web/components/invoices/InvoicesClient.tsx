@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import type { FormEvent } from "react";
 import { FileText, Plus, Search, Send, ShieldCheck, Stamp, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -308,6 +309,7 @@ export function InvoicesClient({
                   <th className="px-4 py-3 font-semibold">Issue date</th>
                   <th className="px-4 py-3 font-semibold">VAT</th>
                   <th className="px-4 py-3 font-semibold">Total</th>
+                  <th className="px-4 py-3 font-semibold">Profile</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -319,6 +321,11 @@ export function InvoicesClient({
                     <td className="px-4 py-4 text-slate-600">{formatDate(invoice.issueDate)}</td>
                     <td className="px-4 py-4 text-slate-600">{money(invoice.vatTotal)}</td>
                     <td className="px-4 py-4 font-semibold text-slate-950">{money(invoice.total)}</td>
+                    <td className="px-4 py-4">
+                      <Link href={`/invoices/${invoice.id}`} onClick={(event) => event.stopPropagation()} className="font-semibold text-sky-700 hover:text-sky-800">
+                        Open
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

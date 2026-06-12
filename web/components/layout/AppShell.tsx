@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -30,8 +31,11 @@ import { signOutAction } from "@/actions/auth";
 import { cn } from "@/lib/cn";
 
 type ShellCompany = {
+  accentColor?: string | null;
   logoUrl: string | null;
   name: string;
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
   taxNumber: string | null;
 };
 
@@ -84,6 +88,7 @@ const navGroups: NavGroup[] = [
   {
     label: "Administration",
     items: [
+      { href: "/company", icon: Building2, label: "Company" },
       { href: "/users", icon: User, label: "Users" },
       { href: "/settings", icon: Settings, label: "Settings" },
     ],
@@ -243,7 +248,7 @@ function SidebarContent({
                     "group flex h-10 items-center gap-3 rounded-2xl px-3 text-sm font-semibold outline-none transition",
                     "focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2",
                     active
-                      ? "bg-slate-950 text-white shadow-sm shadow-slate-900/20"
+                      ? "bg-[var(--secondary-color,#0f172a)] text-white shadow-sm shadow-slate-900/20"
                       : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-950",
                     collapsed && "justify-center px-2",
                   )}
@@ -309,6 +314,11 @@ export function AppShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pageLabel = currentPageLabel(pathname);
+  const themeStyle = {
+    "--primary-color": company.primaryColor || "#0ea5e9",
+    "--secondary-color": company.secondaryColor || "#0f172a",
+    "--accent-color": company.accentColor || "#22c55e",
+  } as CSSProperties;
 
   useEffect(() => {
     const saved = window.localStorage.getItem("xai.sidebar.collapsed");
@@ -323,7 +333,7 @@ export function AppShell({
   }
 
   return (
-    <div className="min-h-dvh bg-[#f7f8fb] text-slate-950">
+    <div className="min-h-dvh bg-[#f7f8fb] text-slate-950" style={themeStyle}>
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-30 hidden border-r border-slate-200/80 bg-white/95 shadow-sm transition-[width] duration-200 lg:block",
