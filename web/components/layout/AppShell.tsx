@@ -15,6 +15,8 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   ReceiptText,
   Search,
   Settings,
@@ -115,6 +117,14 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function currentPageLabel(pathname: string) {
+  const allItems = navGroups.flatMap((group) => group.items);
+  const active = allItems
+    .filter((item) => isActive(pathname, item.href))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+  return active?.label ?? "Workspace";
+}
+
 function CompanyMark({
   collapsed,
   company,
@@ -123,11 +133,11 @@ function CompanyMark({
   company: ShellCompany;
 }) {
   return (
-    <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
+    <div className={cn("flex min-w-0 items-center gap-3", collapsed && "justify-center")}>
       {company.logoUrl ? (
-        <img src={company.logoUrl} alt="" className="h-11 w-11 rounded-xl border border-slate-200 bg-white object-contain p-1" />
+        <img src={company.logoUrl} alt="" className="h-10 w-10 rounded-2xl border border-white/70 bg-white object-contain p-1 shadow-sm" />
       ) : (
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500 text-sm font-black text-white shadow-sm shadow-sky-500/20">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-500 text-sm font-black text-white shadow-sm shadow-sky-500/25">
           {initials(company.name)}
         </div>
       )}
@@ -184,23 +194,26 @@ function SidebarContent({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-slate-200 p-4">
-        <div className="flex items-center justify-between gap-3">
+      <div className="p-3">
+        <div className={cn(
+          "flex items-center justify-between gap-3 rounded-3xl border border-slate-200/80 bg-slate-50/80 p-3 shadow-sm shadow-slate-200/60",
+          collapsed && "justify-center rounded-2xl px-2",
+        )}>
           <CompanyMark collapsed={collapsed} company={company} />
           {onToggle ? (
             <button
               type="button"
               onClick={onToggle}
-              className="hidden rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 lg:inline-flex"
+              className="hidden rounded-xl p-2 text-slate-400 transition hover:bg-white hover:text-slate-900 hover:shadow-sm lg:inline-flex"
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
-              {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
             </button>
           ) : null}
         </div>
       </div>
 
-      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4" aria-label="Primary navigation">
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-2" aria-label="Primary navigation">
         {visibleGroups.map((group, groupIndex) => (
           <div key={group.label ?? `main-${groupIndex}`} className="space-y-1">
             {group.label && !collapsed ? (
@@ -216,11 +229,11 @@ function SidebarContent({
                   onClick={onNavigate}
                   title={collapsed ? item.label : undefined}
                   className={cn(
-                    "group flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-semibold outline-none transition",
+                    "group flex h-10 items-center gap-3 rounded-2xl px-3 text-sm font-semibold outline-none transition",
                     "focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2",
                     active
-                      ? "bg-slate-950 text-white shadow-sm"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-950",
+                      ? "bg-slate-950 text-white shadow-sm shadow-slate-900/20"
+                      : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-950",
                     collapsed && "justify-center px-2",
                   )}
                 >
@@ -233,8 +246,8 @@ function SidebarContent({
         ))}
       </nav>
 
-      <div className="border-t border-slate-200 p-3">
-        <div className={cn("rounded-2xl bg-slate-50 p-3", collapsed && "p-2")}>
+      <div className="p-3">
+        <div className={cn("rounded-3xl border border-slate-200/80 bg-white p-3 shadow-sm", collapsed && "rounded-2xl p-2")}>
           <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
             <Avatar user={user} className="h-10 w-10 shrink-0" />
             {!collapsed ? (
@@ -246,19 +259,19 @@ function SidebarContent({
           </div>
           {!collapsed ? (
             <>
-              <div className="mt-3 rounded-xl bg-white p-3 text-xs text-slate-500 ring-1 ring-slate-200">
+              <div className="mt-3 rounded-2xl bg-slate-50 p-3 text-xs text-slate-500 ring-1 ring-slate-200/80">
                 <p className="font-semibold text-slate-700">Last login</p>
                 <p className="mt-1">{formatDateTime(user.lastLoginAt)}</p>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-1">
-                <Link href="/settings" className="rounded-lg px-2 py-2 text-center text-xs font-semibold text-slate-600 hover:bg-white hover:text-slate-950">
+                <Link href="/settings" className="rounded-xl px-2 py-2 text-center text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-950">
                   Profile
                 </Link>
-                <Link href="/settings" className="rounded-lg px-2 py-2 text-center text-xs font-semibold text-slate-600 hover:bg-white hover:text-slate-950">
+                <Link href="/settings" className="rounded-xl px-2 py-2 text-center text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-950">
                   Settings
                 </Link>
                 <form action={signOutAction}>
-                  <button type="submit" className="w-full rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-white hover:text-slate-950">
+                  <button type="submit" className="w-full rounded-xl px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-950">
                     Logout
                   </button>
                 </form>
@@ -284,6 +297,7 @@ export function AppShell({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const pageLabel = currentPageLabel(pathname);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("xai.sidebar.collapsed");
@@ -298,10 +312,10 @@ export function AppShell({
   }
 
   return (
-    <div className="min-h-dvh bg-slate-50 text-slate-950">
+    <div className="min-h-dvh bg-[#f7f8fb] text-slate-950">
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-30 hidden border-r border-slate-200 bg-white shadow-sm transition-[width] duration-200 lg:block",
+          "fixed inset-y-0 left-0 z-30 hidden border-r border-slate-200/80 bg-white/95 shadow-sm transition-[width] duration-200 lg:block",
           collapsed ? "w-[84px]" : "w-[284px]",
         )}
       >
@@ -315,43 +329,53 @@ export function AppShell({
       </aside>
 
       <div className={cn("min-h-dvh transition-[padding] duration-200", collapsed ? "lg:pl-[84px]" : "lg:pl-[284px]")}>
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
-          <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
+        <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-[#f7f8fb]/85 backdrop-blur-xl">
+          <div className="flex h-[72px] items-center gap-3 px-4 sm:px-6 lg:px-8">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="rounded-xl border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-50 hover:text-slate-950 lg:hidden"
+              className="rounded-2xl border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 lg:hidden"
               aria-label="Open navigation"
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div className="relative max-w-xl flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <div className="hidden min-w-[150px] lg:block">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Workspace</p>
+              <h1 className="mt-1 text-lg font-bold tracking-tight text-slate-950">{pageLabel}</h1>
+            </div>
+            <div className="relative max-w-2xl flex-1">
+              <div className="pointer-events-none absolute left-3 top-1/2 flex -translate-y-1/2 items-center gap-2 text-slate-400">
+                <Search className="h-4 w-4" />
+              </div>
               <input
                 type="search"
                 placeholder="Search invoices, customers, payments..."
-                className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-500/15"
+                className="h-11 w-full rounded-2xl border border-slate-200/90 bg-white pl-9 pr-20 text-sm shadow-sm outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-sky-400 focus:ring-4 focus:ring-sky-500/10"
                 aria-label="Global search"
               />
+              <div className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-xl bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-400 sm:flex">
+                Ctrl K
+              </div>
             </div>
-            <button type="button" className="hidden rounded-xl p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-950 sm:inline-flex" aria-label="Notifications">
+            <button type="button" className="relative hidden h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-slate-300 hover:text-slate-950 sm:inline-flex" aria-label="Notifications">
               <Bell className="h-5 w-5" />
+              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-sky-500 ring-2 ring-white" />
             </button>
-            <button type="button" className="hidden rounded-xl p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-950 sm:inline-flex" aria-label="Help">
+            <button type="button" className="hidden h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-slate-300 hover:text-slate-950 sm:inline-flex" aria-label="Help">
               <CircleHelp className="h-5 w-5" />
             </button>
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setMenuOpen((current) => !current)}
-                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-left shadow-sm transition hover:bg-slate-50"
+                className="flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-2.5 text-left shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"
               >
                 <Avatar user={user} className="h-8 w-8" />
                 <div className="hidden min-w-0 sm:block">
-                  <p className="max-w-32 truncate text-xs font-bold text-slate-950">{user.name}</p>
-                  <p className="text-[11px] font-medium text-slate-500">{roleLabel(user.role)}</p>
+                  <p className="max-w-32 truncate text-sm font-bold leading-4 text-slate-950">{user.name}</p>
+                  <p className="text-[11px] font-semibold text-slate-500">{roleLabel(user.role)}</p>
                 </div>
               </button>
               {menuOpen ? (
@@ -433,4 +457,3 @@ export function AppShell({
     </div>
   );
 }
-
