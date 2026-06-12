@@ -158,8 +158,19 @@ function Avatar({
   className?: string;
   user: ShellUser;
 }) {
-  if (user.avatarUrl) {
-    return <img src={user.avatarUrl} alt="" className={cn("rounded-full object-cover", className)} />;
+  const [imageFailed, setImageFailed] = useState(false);
+  const avatarUrl = user.avatarUrl?.trim();
+
+  if (avatarUrl && !imageFailed) {
+    return (
+      <img
+        src={avatarUrl}
+        alt=""
+        referrerPolicy="no-referrer"
+        onError={() => setImageFailed(true)}
+        className={cn("rounded-full object-cover", className)}
+      />
+    );
   }
   return (
     <div className={cn("flex items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white", className)}>
