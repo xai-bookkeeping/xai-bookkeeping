@@ -6,13 +6,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { Mail } from "lucide-react";
 import { loginSchema, type LoginFormData } from "@/lib/validations";
-import { loginAction } from "@/actions/auth";
+import { googleSignInAction, loginAction } from "@/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
 
 export function LoginForm() {
   const [isPending, startTransition] = useTransition();
+  const [isGooglePending, startGoogleTransition] = useTransition();
   const [serverError, setServerError] = useState<{ message: string; code?: string } | null>(null);
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [resentSuccess, setResentSuccess] = useState(false);
@@ -37,6 +38,15 @@ export function LoginForm() {
       }
     });
   };
+
+  function handleGoogleSignIn() {
+    setServerError(null);
+    setUnverifiedEmail(null);
+    startGoogleTransition(async () => {
+      const result = await googleSignInAction();
+      if (result?.error) setServerError({ message: result.error, code: result.code });
+    });
+  }
 
   async function handleResend() {
     if (!unverifiedEmail) return;
@@ -91,6 +101,27 @@ export function LoginForm() {
             {serverError.message}
           </Alert>
         )}
+
+        <Button
+          type="button"
+          variant="secondary"
+          fullWidth
+          size="lg"
+          loading={isGooglePending}
+          onClick={handleGoogleSignIn}
+          className="border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
+        >
+          <span className="grid h-5 w-5 place-items-center rounded-full bg-white text-sm font-bold text-slate-900">
+            G
+          </span>
+          Continue with Google
+        </Button>
+
+        <div className="flex items-center gap-3 py-1">
+          <div className="h-px flex-1 bg-slate-200" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">or</span>
+          <div className="h-px flex-1 bg-slate-200" />
+        </div>
 
         <Input
           {...form.register("email")}

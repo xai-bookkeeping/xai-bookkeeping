@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { Mail, User } from "lucide-react";
 import { registerSchema, type RegisterFormData } from "@/lib/validations";
-import { registerAction } from "@/actions/auth";
+import { googleSignInAction, registerAction } from "@/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
@@ -14,6 +14,7 @@ import { PasswordStrength } from "@/components/ui/PasswordStrength";
 
 export function RegisterForm({ prefillEmail = "" }: { prefillEmail?: string }) {
   const [isPending, startTransition] = useTransition();
+  const [isGooglePending, startGoogleTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
   const [watchedPassword, setWatchedPassword] = useState("");
 
@@ -36,6 +37,14 @@ export function RegisterForm({ prefillEmail = "" }: { prefillEmail?: string }) {
     });
   };
 
+  function handleGoogleSignUp() {
+    setServerError(null);
+    startGoogleTransition(async () => {
+      const result = await googleSignInAction();
+      if (result?.error) setServerError(result.error);
+    });
+  }
+
   return (
     <div className="w-full max-w-[440px]">
       <div className="mb-7">
@@ -55,6 +64,27 @@ export function RegisterForm({ prefillEmail = "" }: { prefillEmail?: string }) {
 
       <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-4">
         {serverError && <Alert variant="error">{serverError}</Alert>}
+
+        <Button
+          type="button"
+          variant="secondary"
+          fullWidth
+          size="lg"
+          loading={isGooglePending}
+          onClick={handleGoogleSignUp}
+          className="border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
+        >
+          <span className="grid h-5 w-5 place-items-center rounded-full bg-white text-sm font-bold text-slate-900">
+            G
+          </span>
+          Continue with Google
+        </Button>
+
+        <div className="flex items-center gap-3 py-1">
+          <div className="h-px flex-1 bg-slate-200" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">or</span>
+          <div className="h-px flex-1 bg-slate-200" />
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <Input

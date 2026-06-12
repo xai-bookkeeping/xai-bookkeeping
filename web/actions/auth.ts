@@ -120,6 +120,26 @@ export async function loginAction(formData: LoginFormData): Promise<ActionResult
   return {};
 }
 
+export async function googleSignInAction(redirectTo = "/onboarding"): Promise<ActionResult> {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    return {
+      error: "Google sign-in is not configured yet. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.",
+      code: "google_not_configured",
+    };
+  }
+
+  try {
+    await signIn("google", { redirectTo });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { error: "Google sign-in failed. Please try again." };
+    }
+    throw error;
+  }
+
+  return {};
+}
+
 export async function registerAction(formData: RegisterFormData): Promise<ActionResult> {
   const parsed = registerSchema.safeParse(formData);
   if (!parsed.success) {
@@ -327,15 +347,18 @@ export async function resetPasswordAction(
   }
 
   const passwordHash = await hashPassword(password);
+  const user = await db.user.findUnique({
+    where: { id: result.userId },
+    select: { email: true, googleId: true },
+  });
 
   await db.user.update({
     where: { id: result.userId },
-    data: { passwordHash },
-  });
-
-  const user = await db.user.findUnique({
-    where: { id: result.userId },
-    select: { email: true },
+    data: {
+      authProvider: user?.googleId ? "EMAIL_AND_GOOGLE" : "EMAIL",
+      passwordHash,
+      passwordLoginEnabled: true,
+    },
   });
 
   await logAuditEvent({
@@ -387,7 +410,9 @@ export async function acceptInvitationAction(
     db.user.update({
       where: { id: invitation.userId },
       data: {
+        authProvider: "EMAIL",
         passwordHash,
+        passwordLoginEnabled: true,
         emailVerified: true,
         emailVerifiedAt: new Date(),
         status: "ACTIVE",

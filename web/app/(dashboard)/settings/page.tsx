@@ -60,6 +60,7 @@ export default async function SettingsPage() {
       }}
       initialProfile={{
         accountStatus: user.status,
+        authProvider: user.authProvider,
         avatarUrl: user.avatarUrl ?? "",
         bio: user.bio ?? "",
         createdAt: user.createdAt.toISOString(),
@@ -73,6 +74,8 @@ export default async function SettingsPage() {
         phone: user.phone ?? "",
         role: user.role,
         username: user.username ?? "",
+        googleConnected: Boolean(user.googleId),
+        passwordLoginEnabled: user.passwordLoginEnabled,
       }}
       initialSessions={user.sessions.map((item) => ({
         createdAt: item.createdAt.toISOString(),

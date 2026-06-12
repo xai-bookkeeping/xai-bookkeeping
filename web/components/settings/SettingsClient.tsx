@@ -17,10 +17,12 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { PasswordStrength } from "@/components/ui/PasswordStrength";
+import { googleSignInAction } from "@/actions/auth";
 import { cn } from "@/lib/cn";
 
 type ProfileState = {
   accountStatus: string;
+  authProvider: string;
   avatarUrl: string;
   bio: string;
   createdAt: string;
@@ -34,6 +36,8 @@ type ProfileState = {
   phone: string;
   role: string;
   username: string;
+  googleConnected: boolean;
+  passwordLoginEnabled: boolean;
 };
 
 type CompanyState = {
@@ -105,6 +109,12 @@ function formatDate(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function formatAccountType(profile: ProfileState) {
+  if (profile.authProvider === "EMAIL_AND_GOOGLE") return "Email + Google";
+  if (profile.authProvider === "GOOGLE") return "Google";
+  return "Email + Password";
 }
 
 async function requestJson<T>(url: string, options: RequestInit): Promise<T> {
@@ -320,6 +330,39 @@ export function SettingsClient({
     });
   }
 
+  function connectGoogle() {
+    setNotice(null);
+    startTransition(async () => {
+      const result = await googleSignInAction("/settings");
+      if (result?.error) setNotice({ type: "error", text: result.error });
+    });
+  }
+
+  function disconnectGoogle() {
+    setNotice(null);
+    startTransition(async () => {
+      try {
+        const result = await requestJson<{
+          authProvider: string;
+          googleConnected: boolean;
+        }>("/api/account/oauth/google", {
+          method: "DELETE",
+        });
+        setProfile((current) => ({
+          ...current,
+          authProvider: result.authProvider,
+          googleConnected: result.googleConnected,
+        }));
+        setNotice({ type: "success", text: "Google account disconnected." });
+      } catch (error) {
+        setNotice({
+          type: "error",
+          text: error instanceof Error ? error.message : "Google disconnect failed.",
+        });
+      }
+    });
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -434,10 +477,11 @@ export function SettingsClient({
                     className="min-h-28 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15"
                   />
                 </label>
-                <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-3">
+                <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-4">
                   <div><span className="text-slate-500">Status</span><p className="font-semibold">{profile.accountStatus}</p></div>
                   <div><span className="text-slate-500">Date joined</span><p className="font-semibold">{formatDate(profile.createdAt)}</p></div>
                   <div><span className="text-slate-500">Last login</span><p className="font-semibold">{formatDate(profile.lastLoginAt)}</p></div>
+                  <div><span className="text-slate-500">Account type</span><p className="font-semibold">{formatAccountType(profile)}</p></div>
                 </div>
                 <Button loading={isPending} onClick={submitProfile}>Save profile</Button>
               </div>
@@ -494,6 +538,53 @@ export function SettingsClient({
 
           {activeTab === "security" ? (
             <div className="space-y-6">
+              <Card>
+                <CardHeader description="Control how you sign in to XAI Books." icon={Shield} title="Authentication methods" />
+                <div className="space-y-4 p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 p-4">
+                    <div className="flex items-center gap-3">
+                      {profile.avatarUrl ? (
+                        <img src={profile.avatarUrl} alt="" className="h-11 w-11 rounded-full object-cover" />
+                      ) : (
+                        <div className="grid h-11 w-11 place-items-center rounded-full bg-slate-950 text-sm font-black text-white">
+                          {initials(profile.firstName, profile.lastName)}
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-semibold text-slate-950">Google account</p>
+                        <p className="text-sm text-slate-500">
+                          {profile.googleConnected ? "Google Connected" : "Google Not Connected"}
+                        </p>
+                      </div>
+                    </div>
+                    {profile.googleConnected ? (
+                      <Button type="button" variant="secondary" onClick={disconnectGoogle} loading={isPending}>
+                        Disconnect Google
+                      </Button>
+                    ) : (
+                      <Button type="button" onClick={connectGoogle}>
+                        Connect Google Account
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm md:grid-cols-3">
+                    <div>
+                      <span className="text-slate-500">Account Type</span>
+                      <p className="font-semibold text-slate-900">{formatAccountType(profile)}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Email password</span>
+                      <p className="font-semibold text-slate-900">
+                        {profile.passwordLoginEnabled ? "Enabled" : "Not set"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Provider</span>
+                      <p className="font-semibold text-slate-900">{profile.authProvider.replaceAll("_", " ")}</p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
               <Card>
                 <CardHeader description="Change your password and protect your account." icon={KeyRound} title="Password management" />
                 <div className="space-y-4 p-5">

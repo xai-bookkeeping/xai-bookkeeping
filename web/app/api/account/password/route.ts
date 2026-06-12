@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { passwordHash: true },
+    select: { googleId: true, passwordHash: true },
   });
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -25,7 +25,9 @@ export async function POST(request: Request) {
   await db.user.update({
     where: { id: session.user.id },
     data: {
+      authProvider: user.googleId ? "EMAIL_AND_GOOGLE" : "EMAIL",
       passwordHash,
+      passwordLoginEnabled: true,
       sessionVersion: { increment: 1 },
     },
   });

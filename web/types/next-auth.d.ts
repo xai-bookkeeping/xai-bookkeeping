@@ -6,6 +6,9 @@ declare module "next-auth" {
     id: string;
     role: string;
     companyName: string;
+    avatarUrl?: string;
+    authProvider?: string;
+    onboardingRequired?: boolean;
     remember?: boolean;
     activeSessionId?: string;
     sessionVersion?: number;
@@ -18,9 +21,12 @@ declare module "next-auth" {
       name: string;
       role: string;
       companyName: string;
+      image?: string | null;
+      authProvider?: string;
     };
     activeSessionId?: string;
     remember?: boolean;
+    onboardingRequired?: boolean;
     sessionExpired?: boolean;
     sessionExpiresAt?: string;
   }
@@ -31,6 +37,9 @@ declare module "next-auth/jwt" {
     id: string;
     role: string;
     companyName: string;
+    avatarUrl?: string;
+    authProvider?: string;
+    onboardingRequired?: boolean;
     remember?: boolean;
     activeSessionId?: string;
     sessionVersion?: number;

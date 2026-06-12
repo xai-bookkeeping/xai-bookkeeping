@@ -8,27 +8,31 @@ datasource db {
 }
 
 model User {
-  id              String     @id @default(cuid())
-  firstName       String     @map("first_name")
-  lastName        String     @map("last_name")
-  displayName     String?    @map("display_name")
-  username        String?    @unique
-  phone           String?
-  jobTitle        String?    @map("job_title")
-  bio             String?
-  avatarUrl       String?    @map("avatar_url")
-  lastLoginAt     DateTime?  @map("last_login_at")
-  sessionVersion  Int        @default(1) @map("session_version")
-  email           String     @unique
-  passwordHash    String     @map("password_hash")
-  emailVerified   Boolean    @default(false) @map("email_verified")
-  emailVerifiedAt DateTime?  @map("email_verified_at")
-  status          UserStatus @default(PENDING)
-  role            Role       @default(ACCOUNTANT)
-  companyName     String?    @map("company_name")
-  country         String     @default("AE")
-  createdAt       DateTime   @default(now()) @map("created_at")
-  updatedAt       DateTime   @updatedAt @map("updated_at")
+  id                   String       @id @default(cuid())
+  firstName            String       @map("first_name")
+  lastName             String       @map("last_name")
+  displayName          String?      @map("display_name")
+  username             String?      @unique
+  phone                String?
+  jobTitle             String?      @map("job_title")
+  bio                  String?
+  avatarUrl            String?      @map("avatar_url")
+  lastLoginAt          DateTime?    @map("last_login_at")
+  sessionVersion       Int          @default(1) @map("session_version")
+  googleId             String?      @unique @map("google_id")
+  authProvider         AuthProvider @default(EMAIL) @map("auth_provider")
+  passwordLoginEnabled Boolean      @default(true) @map("password_login_enabled")
+  onboardingCompleted  Boolean      @default(true) @map("onboarding_completed")
+  email                String       @unique
+  passwordHash         String       @map("password_hash")
+  emailVerified        Boolean      @default(false) @map("email_verified")
+  emailVerifiedAt      DateTime?    @map("email_verified_at")
+  status               UserStatus   @default(PENDING)
+  role                 Role         @default(ACCOUNTANT)
+  companyName          String?      @map("company_name")
+  country              String       @default("AE")
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
 
   verificationTokens  VerificationToken[]
   passwordResetTokens PasswordResetToken[]
@@ -37,41 +41,43 @@ model User {
   company             Company?
   preferences         UserPreference?
   sessions            UserSession[]
-  invitationsSent     UserInvitation[]    @relation("InvitedBy")
-  invitationsReceived UserInvitation[]    @relation("InvitedUser")
+  invitationsSent     UserInvitation[]     @relation("InvitedBy")
+  invitationsReceived UserInvitation[]     @relation("InvitedUser")
   customers           Customer[]
   suppliers           Supplier[]
-  invoices            Invoice[]           @relation("InvoiceOwner")
-  approvedInvoices    Invoice[]           @relation("InvoiceApprover")
-  postedInvoices      Invoice[]           @relation("InvoicePoster")
+  invoices            Invoice[]            @relation("InvoiceOwner")
+  approvedInvoices    Invoice[]            @relation("InvoiceApprover")
+  postedInvoices      Invoice[]            @relation("InvoicePoster")
   payments            Payment[]
-  expenses            Expense[]           @relation("ExpenseOwner")
-  approvedExpenses    Expense[]           @relation("ExpenseApprover")
+  expenses            Expense[]            @relation("ExpenseOwner")
+  approvedExpenses    Expense[]            @relation("ExpenseApprover")
   accounts            Account[]
   journalEntries      JournalEntry[]
 
   @@index([status])
   @@index([emailVerified])
   @@index([username])
+  @@index([authProvider])
+  @@index([onboardingCompleted])
   @@map("xb_users")
 }
 
 model Company {
-  id          String   @id @default(cuid())
-  ownerId     String   @unique @map("owner_id")
-  name        String
-  logoUrl     String?  @map("logo_url")
-  website     String?
-  email       String?
-  phone       String?
-  address     String?
-  city        String?
-  country     String   @default("AE")
-  taxNumber   String?  @map("tax_number")
-  currency    String   @default("AED")
-  timezone    String   @default("Asia/Dubai")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(cuid())
+  ownerId   String   @unique @map("owner_id")
+  name      String
+  logoUrl   String?  @map("logo_url")
+  website   String?
+  email     String?
+  phone     String?
+  address   String?
+  city      String?
+  country   String   @default("AE")
+  taxNumber String?  @map("tax_number")
+  currency  String   @default("AED")
+  timezone  String   @default("Asia/Dubai")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
@@ -80,15 +86,15 @@ model Company {
 }
 
 model UserPreference {
-  id         String     @id @default(cuid())
-  userId     String     @unique @map("user_id")
-  theme      Theme      @default(SYSTEM)
-  language   String     @default("en")
-  dateFormat String     @default("dd/MM/yyyy") @map("date_format")
-  timeFormat String     @default("24h") @map("time_format")
-  currency   String     @default("AED")
-  createdAt  DateTime   @default(now()) @map("created_at")
-  updatedAt  DateTime   @updatedAt @map("updated_at")
+  id         String   @id @default(cuid())
+  userId     String   @unique @map("user_id")
+  theme      Theme    @default(SYSTEM)
+  language   String   @default("en")
+  dateFormat String   @default("dd/MM/yyyy") @map("date_format")
+  timeFormat String   @default("24h") @map("time_format")
+  currency   String   @default("AED")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -96,14 +102,14 @@ model UserPreference {
 }
 
 model UserSession {
-  id          String    @id @default(cuid())
-  userId      String    @map("user_id")
-  ip          String?
-  userAgent   String?   @map("user_agent")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  lastSeenAt  DateTime  @default(now()) @map("last_seen_at")
-  expiresAt   DateTime  @map("expires_at")
-  revokedAt   DateTime? @map("revoked_at")
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  ip         String?
+  userAgent  String?   @map("user_agent")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  lastSeenAt DateTime  @default(now()) @map("last_seen_at")
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -151,12 +157,12 @@ model VerificationToken {
 }
 
 model PasswordResetToken {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  tokenHash String   @unique @map("token_hash")
-  expiresAt DateTime @map("expires_at")
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  used      Boolean   @default(false)
+  createdAt DateTime  @default(now()) @map("created_at")
   usedAt    DateTime? @map("used_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -212,7 +218,7 @@ model Customer {
   updatedAt     DateTime  @updatedAt @map("updated_at")
   deletedAt     DateTime? @map("deleted_at")
 
-  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   invoices Invoice[]
 
   @@index([ownerId, deletedAt])
@@ -234,7 +240,7 @@ model Supplier {
   updatedAt     DateTime  @updatedAt @map("updated_at")
   deletedAt     DateTime? @map("deleted_at")
 
-  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   expenses Expense[]
 
   @@index([ownerId, deletedAt])
@@ -279,16 +285,16 @@ model Invoice {
 }
 
 model InvoiceLine {
-  id          String   @id @default(cuid())
-  invoiceId   String   @map("invoice_id")
-  description String
-  quantity    Decimal  @db.Decimal(12, 3)
-  unitPrice   Decimal  @map("unit_price") @db.Decimal(12, 2)
-  vatRate     Decimal  @default(5.00) @map("vat_rate") @db.Decimal(5, 2)
+  id           String  @id @default(cuid())
+  invoiceId    String  @map("invoice_id")
+  description  String
+  quantity     Decimal @db.Decimal(12, 3)
+  unitPrice    Decimal @map("unit_price") @db.Decimal(12, 2)
+  vatRate      Decimal @default(5.00) @map("vat_rate") @db.Decimal(5, 2)
   lineSubtotal Decimal @map("line_subtotal") @db.Decimal(12, 2)
-  lineVat     Decimal  @map("line_vat") @db.Decimal(12, 2)
-  lineTotal   Decimal  @map("line_total") @db.Decimal(12, 2)
-  sortOrder   Int      @default(0) @map("sort_order")
+  lineVat      Decimal @map("line_vat") @db.Decimal(12, 2)
+  lineTotal    Decimal @map("line_total") @db.Decimal(12, 2)
+  sortOrder    Int     @default(0) @map("sort_order")
 
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
@@ -390,13 +396,13 @@ model JournalEntry {
 }
 
 model JournalLine {
-  id             String   @id @default(cuid())
-  journalEntryId String   @map("journal_entry_id")
-  accountId      String   @map("account_id")
-  debit          Decimal  @default(0) @db.Decimal(12, 2)
-  credit         Decimal  @default(0) @db.Decimal(12, 2)
+  id             String  @id @default(cuid())
+  journalEntryId String  @map("journal_entry_id")
+  accountId      String  @map("account_id")
+  debit          Decimal @default(0) @db.Decimal(12, 2)
+  credit         Decimal @default(0) @db.Decimal(12, 2)
   description    String?
-  sortOrder      Int      @default(0) @map("sort_order")
+  sortOrder      Int     @default(0) @map("sort_order")
 
   journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
   account      Account      @relation(fields: [accountId], references: [id], onDelete: Restrict)
@@ -425,6 +431,12 @@ enum Theme {
   LIGHT
   DARK
   SYSTEM
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  EMAIL_AND_GOOGLE
 }
 
 enum InvoiceStatus {
@@ -504,6 +516,9 @@ enum AuditAction {
   USER_INVITE_ACCEPTED
   USER_INVITE_REVOKED
   USER_PASSWORD_RESET_SENT_BY_ADMIN
+  GOOGLE_ACCOUNT_CONNECTED
+  GOOGLE_ACCOUNT_DISCONNECTED
+  ONBOARDING_COMPLETED
   CUSTOMER_CREATED
   CUSTOMER_UPDATED
   CUSTOMER_DELETED
