@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
@@ -18,11 +18,38 @@ export function LoginForm() {
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [resentSuccess, setResentSuccess] = useState(false);
   const [resendPending, setResendPending] = useState(false);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "", remember: false },
+    defaultValues: { email: "", password: "", remember: false, selectedRole: "" },
   });
+  const email = form.watch("email");
+
+  useEffect(() => {
+    const normalizedEmail = email?.trim().toLowerCase();
+    if (!normalizedEmail || !normalizedEmail.includes("@")) {
+      setRoles([]);
+      form.setValue("selectedRole", "");
+      return;
+    }
+
+    const timer = window.setTimeout(async () => {
+      setRolesLoading(true);
+      try {
+        const response = await fetch(`/api/auth/roles?email=${encodeURIComponent(normalizedEmail)}`);
+        const body = await response.json().catch(() => ({ roles: [] }));
+        const nextRoles = Array.isArray(body.roles) ? body.roles : [];
+        setRoles(nextRoles);
+        form.setValue("selectedRole", nextRoles[0] ?? "");
+      } finally {
+        setRolesLoading(false);
+      }
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [email, form]);
 
   const onSubmit = (data: LoginFormData) => {
     setServerError(null);
@@ -144,6 +171,24 @@ export function LoginForm() {
           autoComplete="current-password"
           error={form.formState.errors.password?.message}
         />
+
+        <label className="block space-y-1.5">
+          <span className="text-sm font-medium text-slate-700">Login As</span>
+          <select
+            {...form.register("selectedRole")}
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15"
+            disabled={rolesLoading || roles.length === 0}
+          >
+            {roles.length === 0 ? (
+              <option value="">{rolesLoading ? "Loading roles..." : "Enter email to load roles"}</option>
+            ) : (
+              roles.map((role) => <option key={role} value={role}>{role}</option>)
+            )}
+          </select>
+          <span className="block text-xs text-slate-400">
+            Only roles assigned to this user are shown.
+          </span>
+        </label>
 
         <div className="flex items-center justify-between">
           <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">

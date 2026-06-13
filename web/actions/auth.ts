@@ -61,7 +61,7 @@ export async function loginAction(formData: LoginFormData): Promise<ActionResult
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
-  const { email, password, remember } = parsed.data;
+  const { email, password, remember, selectedRole } = parsed.data;
   const { ip, userAgent } = await getRequestContext();
 
   const blocked = await isRateLimited(email, ip);
@@ -103,6 +103,7 @@ export async function loginAction(formData: LoginFormData): Promise<ActionResult
       email,
       password,
       remember,
+      selectedRole,
       redirectTo: "/dashboard",
     });
   } catch (error) {

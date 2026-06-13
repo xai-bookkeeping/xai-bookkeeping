@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { CustomersClient } from "@/components/customers/CustomersClient";
 import { db } from "@/lib/db";
+import { getRuntimeFormConfig } from "@/lib/form-runtime";
 
 export const metadata: Metadata = { title: "Customers" };
 
@@ -12,7 +13,7 @@ export default async function CustomersPage() {
   const session = await auth();
   if (!session || session.sessionExpired) redirect("/login");
 
-  const [total, customers] = await db.$transaction([
+  const [total, customers, formConfig] = await Promise.all([
     db.customer.count({
       where: { ownerId: session.user.id, deletedAt: null },
     }),
@@ -21,6 +22,7 @@ export default async function CustomersPage() {
       orderBy: { createdAt: "desc" },
       take: PAGE_SIZE,
     }),
+    getRuntimeFormConfig("customers"),
   ]);
 
   return (
@@ -36,6 +38,7 @@ export default async function CustomersPage() {
         pageSize: PAGE_SIZE,
         total,
       }}
+      formConfig={formConfig}
     />
   );
 }

@@ -11,6 +11,7 @@ const passwordSchema = z
 export const loginSchema = z.object({
   email: z.string().email("Enter a valid email address").toLowerCase(),
   password: z.string().min(1, "Password is required"),
+  selectedRole: z.string().trim().optional().default(""),
   remember: z
     .preprocess((value) => value === true || value === "true" || value === "on", z.boolean())
     .optional()

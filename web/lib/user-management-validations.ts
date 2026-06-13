@@ -25,6 +25,7 @@ export const createUserSchema = inviteUserSchema.extend({
 });
 
 export const updateManagedUserSchema = z.object({
+  email: z.string().email("Enter a valid email address").toLowerCase().optional(),
   firstName: z.string().trim().min(1, "First name is required").max(80).optional(),
   lastName: z.string().trim().min(1, "Last name is required").max(80).optional(),
   displayName: z.string().trim().max(120).optional().nullable(),
@@ -39,7 +40,11 @@ export const updateManagedUserSchema = z.object({
   phone: z.string().trim().max(40).optional().nullable(),
   jobTitle: z.string().trim().max(120).optional().nullable(),
   role: z.enum(managedRoles).optional(),
+  roleIds: z.array(z.string().min(1)).optional(),
   status: z.enum(managedStatuses).optional(),
+  emailVerified: z.boolean().optional(),
+  passwordLoginEnabled: z.boolean().optional(),
+  onboardingCompleted: z.boolean().optional(),
 });
 
 export const acceptInvitationSchema = resetPasswordSchema;

@@ -12,6 +12,7 @@ import {
   ChevronRight,
   CircleHelp,
   FileBarChart,
+  FilePenLine,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -22,6 +23,8 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  SlidersHorizontal,
+  Table2,
   User,
   Users,
   WalletCards,
@@ -88,9 +91,15 @@ const navGroups: NavGroup[] = [
   {
     label: "Administration",
     items: [
-      { href: "/company", icon: Building2, label: "Company" },
-      { href: "/users", icon: User, label: "Users" },
-      { href: "/settings", icon: Settings, label: "Settings" },
+      { href: "/administration", icon: Settings, label: "Admin Home" },
+      { href: "/administration/users", icon: User, label: "Users" },
+      { href: "/administration/roles", icon: ShieldCheck, label: "Roles" },
+      { href: "/administration/permissions", icon: SlidersHorizontal, label: "Permissions" },
+      { href: "/administration/forms", icon: FilePenLine, label: "Form Fields" },
+      { href: "/administration/reference-data", icon: Table2, label: "Reference Data" },
+      { href: "/administration/system-settings", icon: Settings, label: "System Settings" },
+      { href: "/administration/database", icon: Table2, label: "Database Explorer" },
+      { href: "/administration/audit", icon: ShieldCheck, label: "Audit Viewer" },
     ],
   },
 ];
@@ -201,10 +210,12 @@ function SidebarContent({
 }) {
   const visibleGroups = useMemo(
     () =>
-      navGroups.map((group) => ({
-        ...group,
-        items: group.items.filter((item) => item.href !== "/users" || user.role === "ADMIN"),
-      })).filter((group) => group.items.length > 0),
+      navGroups
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) => item.href !== "/users" || user.role === "ADMIN"),
+        }))
+        .filter((group) => group.items.length > 0),
     [user.role],
   );
 

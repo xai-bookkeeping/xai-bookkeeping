@@ -8,6 +8,8 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/cn";
+import { formField } from "@/lib/form-client";
+import type { RuntimeFormConfig } from "@/lib/form-runtime";
 
 type InvoiceStatus = "DRAFT" | "SUBMITTED" | "APPROVED" | "POSTED" | "PAID";
 
@@ -126,10 +128,12 @@ async function requestJson<T>(url: string, options?: RequestInit): Promise<T> {
 
 export function InvoicesClient({
   customers,
+  formConfig,
   initialData,
   role,
 }: {
   customers: CustomerOption[];
+  formConfig: RuntimeFormConfig | null;
   initialData: InvoicesResponse;
   role: string;
 }) {
@@ -146,6 +150,7 @@ export function InvoicesClient({
   const totals = useMemo(() => calculate(draft.lines), [draft.lines]);
   const totalPages = Math.max(1, Math.ceil(data.total / data.pageSize));
   const canApprove = role === "ADMIN" || role === "APPROVER";
+  const field = (name: keyof InvoiceDraft | "status" | "subtotal" | "vatTotal" | "total", fallback: string) => formField(formConfig, name, fallback);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -349,7 +354,7 @@ export function InvoicesClient({
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="font-semibold text-slate-950">{selected ? selected.invoiceNumber : "New invoice"}</h2>
-              <p className="mt-1 text-sm text-slate-500">{selected?.status ?? "DRAFT"}</p>
+              {!field("status", "Status").hidden ? <p className="mt-1 text-sm text-slate-500">{selected?.status ?? "DRAFT"}</p> : null}
             </div>
             {selected?.status === "DRAFT" ? (
               <Button type="button" size="sm" variant="danger" onClick={deleteInvoice}><Trash2 className="h-4 w-4" /> Delete</Button>
@@ -357,15 +362,21 @@ export function InvoicesClient({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="space-y-1.5 text-sm font-medium text-slate-700 sm:col-span-2">
-              Customer
-              <select className="h-10 w-full rounded-xl border border-slate-200 px-3" value={draft.customerId} onChange={(e) => setDraft({ ...draft, customerId: e.target.value })} disabled={selected?.status !== "DRAFT" && Boolean(selected)}>
-                <option value="">Select customer</option>
-                {customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
-              </select>
-            </label>
-            <Input label="Issue date" type="date" value={draft.issueDate} disabled={selected?.status !== "DRAFT" && Boolean(selected)} onChange={(e) => setDraft({ ...draft, issueDate: e.target.value })} />
-            <Input label="Due date" type="date" value={draft.dueDate} disabled={selected?.status !== "DRAFT" && Boolean(selected)} onChange={(e) => setDraft({ ...draft, dueDate: e.target.value })} />
+            {!field("customerId", "Customer").hidden ? (
+              <label className="space-y-1.5 text-sm font-medium text-slate-700 sm:col-span-2">
+                {field("customerId", "Customer").label}
+                <select className="h-10 w-full rounded-xl border border-slate-200 px-3" value={draft.customerId} required={field("customerId", "Customer").required} onChange={(e) => setDraft({ ...draft, customerId: e.target.value })} disabled={field("customerId", "Customer").disabled || (selected?.status !== "DRAFT" && Boolean(selected))}>
+                  <option value="">Select customer</option>
+                  {customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
+                </select>
+              </label>
+            ) : null}
+            {!field("issueDate", "Issue date").hidden ? (
+              <Input label={field("issueDate", "Issue date").label} type="date" value={draft.issueDate} required={field("issueDate", "Issue date").required} disabled={field("issueDate", "Issue date").disabled || (selected?.status !== "DRAFT" && Boolean(selected))} onChange={(e) => setDraft({ ...draft, issueDate: e.target.value })} />
+            ) : null}
+            {!field("dueDate", "Due date").hidden ? (
+              <Input label={field("dueDate", "Due date").label} type="date" value={draft.dueDate} required={field("dueDate", "Due date").required} disabled={field("dueDate", "Due date").disabled || (selected?.status !== "DRAFT" && Boolean(selected))} onChange={(e) => setDraft({ ...draft, dueDate: e.target.value })} />
+            ) : null}
           </div>
 
           <div className="space-y-3">
@@ -388,15 +399,17 @@ export function InvoicesClient({
             ))}
           </div>
 
-          <label className="block space-y-1.5">
-            <span className="text-sm font-medium text-slate-700">Notes</span>
-            <textarea value={draft.notes} disabled={selected?.status !== "DRAFT" && Boolean(selected)} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} className="min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15" />
-          </label>
+          {!field("notes", "Notes").hidden ? (
+            <label className="block space-y-1.5">
+              <span className="text-sm font-medium text-slate-700">{field("notes", "Notes").label}</span>
+              <textarea value={draft.notes} required={field("notes", "Notes").required} disabled={field("notes", "Notes").disabled || (selected?.status !== "DRAFT" && Boolean(selected))} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} className="min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15 disabled:bg-slate-50 disabled:text-slate-500" />
+            </label>
+          ) : null}
 
           <div className="rounded-xl bg-slate-50 p-4 text-sm">
-            <div className="flex justify-between"><span>Subtotal</span><strong>{money(totals.subtotal)}</strong></div>
-            <div className="mt-2 flex justify-between"><span>VAT</span><strong>{money(totals.vat)}</strong></div>
-            <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 text-base"><span>Total</span><strong>{money(totals.total)}</strong></div>
+            {!field("subtotal", "Subtotal").hidden ? <div className="flex justify-between"><span>{field("subtotal", "Subtotal").label}</span><strong>{money(totals.subtotal)}</strong></div> : null}
+            {!field("vatTotal", "VAT").hidden ? <div className="mt-2 flex justify-between"><span>{field("vatTotal", "VAT").label}</span><strong>{money(totals.vat)}</strong></div> : null}
+            {!field("total", "Total").hidden ? <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 text-base"><span>{field("total", "Total").label}</span><strong>{money(totals.total)}</strong></div> : null}
           </div>
 
           <div className="grid gap-2">

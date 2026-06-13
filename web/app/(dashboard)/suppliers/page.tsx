@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { SuppliersClient } from "@/components/suppliers/SuppliersClient";
 import { db } from "@/lib/db";
+import { getRuntimeFormConfig } from "@/lib/form-runtime";
 
 export const metadata: Metadata = { title: "Suppliers" };
 
@@ -12,7 +13,7 @@ export default async function SuppliersPage() {
   const session = await auth();
   if (!session || session.sessionExpired) redirect("/login");
 
-  const [total, suppliers] = await db.$transaction([
+  const [total, suppliers, formConfig] = await Promise.all([
     db.supplier.count({
       where: { ownerId: session.user.id, deletedAt: null },
     }),
@@ -21,6 +22,7 @@ export default async function SuppliersPage() {
       orderBy: { createdAt: "desc" },
       take: PAGE_SIZE,
     }),
+    getRuntimeFormConfig("suppliers"),
   ]);
 
   return (
@@ -36,6 +38,7 @@ export default async function SuppliersPage() {
           deletedAt: supplier.deletedAt?.toISOString() ?? null,
         })),
       }}
+      formConfig={formConfig}
     />
   );
 }

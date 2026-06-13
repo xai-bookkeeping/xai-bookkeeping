@@ -41,16 +41,23 @@ model User {
   company             Company?
   preferences         UserPreference?
   sessions            UserSession[]
-  invitationsSent     UserInvitation[]     @relation("InvitedBy")
-  invitationsReceived UserInvitation[]     @relation("InvitedUser")
+  roleAssignments     UserRoleAssignment[]  @relation("AssignedUserRoles")
+  assignedUserRoles   UserRoleAssignment[]  @relation("RoleAssignedBy")
+  updatedSettings     SystemSetting[]
+  savedQueries        SqlSavedQuery[]
+  queryHistory        SqlQueryHistory[]
+  formTemplates       FormTemplate[]        @relation("FormTemplatesCreatedBy")
+  formFields          FormFieldDefinition[] @relation("FormFieldsUpdatedBy")
+  invitationsSent     UserInvitation[]      @relation("InvitedBy")
+  invitationsReceived UserInvitation[]      @relation("InvitedUser")
   customers           Customer[]
   suppliers           Supplier[]
-  invoices            Invoice[]            @relation("InvoiceOwner")
-  approvedInvoices    Invoice[]            @relation("InvoiceApprover")
-  postedInvoices      Invoice[]            @relation("InvoicePoster")
+  invoices            Invoice[]             @relation("InvoiceOwner")
+  approvedInvoices    Invoice[]             @relation("InvoiceApprover")
+  postedInvoices      Invoice[]             @relation("InvoicePoster")
   payments            Payment[]
-  expenses            Expense[]            @relation("ExpenseOwner")
-  approvedExpenses    Expense[]            @relation("ExpenseApprover")
+  expenses            Expense[]             @relation("ExpenseOwner")
+  approvedExpenses    Expense[]             @relation("ExpenseApprover")
   accounts            Account[]
   journalEntries      JournalEntry[]
   approvalRoutes      ApprovalRoute[]
@@ -208,6 +215,205 @@ model ActivityLog {
   @@index([email, createdAt])
   @@index([action, createdAt])
   @@map("xb_activity_logs")
+}
+
+model AdminRole {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  description String?
+  status      RoleStatus @default(ACTIVE)
+  systemRole  Boolean    @default(false) @map("system_role")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  permissions     RolePermission[]
+  userAssignments UserRoleAssignment[]
+
+  @@index([status])
+  @@map("xb_admin_roles")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  module      String
+  action      String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  roles RolePermission[]
+
+  @@index([module])
+  @@map("xb_permissions")
+}
+
+model RolePermission {
+  id           String   @id @default(cuid())
+  roleId       String   @map("role_id")
+  permissionId String   @map("permission_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  role       AdminRole  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([permissionId])
+  @@map("xb_role_permissions")
+}
+
+model UserRoleAssignment {
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id")
+  roleId       String    @map("role_id")
+  assignedById String?   @map("assigned_by_id")
+  active       Boolean   @default(true)
+  assignedAt   DateTime  @default(now()) @map("assigned_at")
+  revokedAt    DateTime? @map("revoked_at")
+
+  user       User      @relation("AssignedUserRoles", fields: [userId], references: [id], onDelete: Cascade)
+  role       AdminRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedBy User?     @relation("RoleAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, roleId])
+  @@index([roleId, active])
+  @@index([userId, active])
+  @@map("xb_user_role_assignments")
+}
+
+model ReferenceDataGroup {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  systemGroup Boolean  @default(false) @map("system_group")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  items ReferenceDataItem[]
+
+  @@index([active])
+  @@map("xb_reference_data_groups")
+}
+
+model ReferenceDataItem {
+  id          String   @id @default(cuid())
+  groupId     String   @map("group_id")
+  code        String
+  label       String
+  description String?
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(100) @map("sort_order")
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  group ReferenceDataGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, code])
+  @@index([groupId, active, sortOrder])
+  @@map("xb_reference_data_items")
+}
+
+model SystemSetting {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  module      String
+  label       String
+  value       String
+  valueType   SettingValueType @default(TEXT) @map("value_type")
+  description String?
+  sensitive   Boolean          @default(false)
+  updatedById String?          @map("updated_by_id")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  updatedBy User? @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([module])
+  @@map("xb_system_settings")
+}
+
+model SqlSavedQuery {
+  id          String   @id @default(cuid())
+  ownerId     String   @map("owner_id")
+  name        String
+  sqlText     String   @map("sql_text")
+  description String?
+  readOnly    Boolean  @default(true) @map("read_only")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, createdAt])
+  @@map("xb_sql_saved_queries")
+}
+
+model SqlQueryHistory {
+  id         String         @id @default(cuid())
+  ownerId    String         @map("owner_id")
+  sqlText    String         @map("sql_text")
+  status     SqlQueryStatus @default(SUCCEEDED)
+  rowCount   Int            @default(0) @map("row_count")
+  durationMs Int?           @map("duration_ms")
+  error      String?
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, createdAt])
+  @@index([status, createdAt])
+  @@map("xb_sql_query_history")
+}
+
+model FormTemplate {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  active      Boolean  @default(true)
+  createdById String?  @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  createdBy User?                 @relation("FormTemplatesCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  fields    FormFieldDefinition[]
+
+  @@index([active])
+  @@map("xb_form_templates")
+}
+
+model FormFieldDefinition {
+  id             String             @id @default(cuid())
+  templateId     String             @map("template_id")
+  fieldName      String             @map("field_name")
+  fieldLabel     String             @map("field_label")
+  groupTitle     String?            @map("group_title")
+  entryMode      FormFieldEntryMode @default(USER_ENTRY) @map("entry_mode")
+  fieldType      FormFieldType      @default(TEXT) @map("field_type")
+  defaultValue   String?            @map("default_value")
+  formula        String?
+  hasFormula     Boolean            @default(false) @map("has_formula")
+  scanField      Boolean            @default(false) @map("scan_field")
+  dependsOn      String?            @map("depends_on")
+  listKey        String?            @map("list_key")
+  allowUserEntry Boolean            @default(true) @map("allow_user_entry")
+  resetToNull    Boolean            @default(false) @map("reset_to_null")
+  sortOrder      Int                @default(100) @map("sort_order")
+  active         Boolean            @default(true)
+  systemField    Boolean            @default(false) @map("system_field")
+  updatedById    String?            @map("updated_by_id")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  template  FormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  updatedBy User?        @relation("FormFieldsUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@unique([templateId, fieldName])
+  @@index([templateId, active, sortOrder])
+  @@index([listKey])
+  @@map("xb_form_field_definitions")
 }
 
 model ApprovalRoute {
@@ -456,6 +662,48 @@ enum Role {
   VIEWER
 }
 
+enum RoleStatus {
+  ACTIVE
+  INACTIVE
+  SYSTEM
+}
+
+enum SettingValueType {
+  TEXT
+  NUMBER
+  BOOLEAN
+  JSON
+  EMAIL
+}
+
+enum SqlQueryStatus {
+  SUCCEEDED
+  FAILED
+  BLOCKED
+}
+
+enum FormFieldEntryMode {
+  USER_ENTRY
+  MANDATORY
+  DISPLAY_ONLY
+  NOT_DISPLAYED
+}
+
+enum FormFieldType {
+  TEXT
+  TEXTAREA
+  INTEGER
+  NUMBER
+  MONEY
+  BOOLEAN
+  DATE
+  DATE_TIME
+  EMAIL
+  PHONE
+  URL
+  LIST
+}
+
 enum UserStatus {
   PENDING
   ACTIVE
@@ -583,6 +831,26 @@ enum AuditAction {
   SUPPLIER_LOGO_UPDATED
   SUPPLIER_LOGO_REMOVED
   SUPPLIER_DELETED
+  ADMIN_ROLE_CREATED
+  ADMIN_ROLE_UPDATED
+  ADMIN_ROLE_DELETED
+  ADMIN_ROLE_CLONED
+  ADMIN_PERMISSION_ASSIGNED
+  ADMIN_PERMISSION_REVOKED
+  ADMIN_USER_ROLE_ASSIGNED
+  ADMIN_USER_ROLE_REVOKED
+  REFERENCE_DATA_CREATED
+  REFERENCE_DATA_UPDATED
+  REFERENCE_DATA_DELETED
+  SYSTEM_SETTING_UPDATED
+  SQL_QUERY_EXECUTED
+  SQL_QUERY_BLOCKED
+  SQL_QUERY_SAVED
+  FORM_TEMPLATE_UPDATED
+  FORM_FIELD_CREATED
+  FORM_FIELD_UPDATED
+  FORM_FIELD_DELETED
+  FORM_FIELD_REORDERED
   INVOICE_CREATED
   INVOICE_UPDATED
   INVOICE_SUBMITTED

@@ -8,6 +8,8 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/cn";
+import { formField } from "@/lib/form-client";
+import type { RuntimeFormConfig } from "@/lib/form-runtime";
 
 type Supplier = {
   id: string;
@@ -79,7 +81,7 @@ async function requestJson<T>(url: string, options?: RequestInit): Promise<T> {
   return body as T;
 }
 
-export function SuppliersClient({ initialData }: { initialData: SuppliersResponse }) {
+export function SuppliersClient({ formConfig, initialData }: { formConfig: RuntimeFormConfig | null; initialData: SuppliersResponse }) {
   const [data, setData] = useState(initialData);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -91,6 +93,7 @@ export function SuppliersClient({ initialData }: { initialData: SuppliersRespons
   const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
   const totalPages = Math.max(1, Math.ceil(data.total / data.pageSize));
+  const field = (name: keyof SupplierDraft, fallback: string) => formField(formConfig, name, fallback);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -305,21 +308,35 @@ export function SuppliersClient({ initialData }: { initialData: SuppliersRespons
               <h2 className="font-semibold text-slate-950">Create supplier</h2>
             </div>
             <form onSubmit={submitCreate} className="mt-5 space-y-4">
-              <Input label="Supplier name" value={createDraft.name} onChange={(e) => setCreateDraft({ ...createDraft, name: e.target.value })} required />
-              <Input label="Contact person" value={createDraft.contactPerson} onChange={(e) => setCreateDraft({ ...createDraft, contactPerson: e.target.value })} />
+              {!field("name", "Supplier name").hidden ? (
+                <Input label={field("name", "Supplier name").label} value={createDraft.name} onChange={(e) => setCreateDraft({ ...createDraft, name: e.target.value })} required={field("name", "Supplier name").required} disabled={field("name", "Supplier name").disabled} />
+              ) : null}
+              {!field("contactPerson", "Contact person").hidden ? (
+                <Input label={field("contactPerson", "Contact person").label} value={createDraft.contactPerson} onChange={(e) => setCreateDraft({ ...createDraft, contactPerson: e.target.value })} required={field("contactPerson", "Contact person").required} disabled={field("contactPerson", "Contact person").disabled} />
+              ) : null}
               <div className="grid gap-3 sm:grid-cols-2">
-                <Input label="Email" type="email" leftIcon={<Mail className="h-4 w-4" />} value={createDraft.email} onChange={(e) => setCreateDraft({ ...createDraft, email: e.target.value })} />
-                <Input label="Phone" leftIcon={<Phone className="h-4 w-4" />} value={createDraft.phone} onChange={(e) => setCreateDraft({ ...createDraft, phone: e.target.value })} />
+                {!field("email", "Email").hidden ? (
+                  <Input label={field("email", "Email").label} type="email" leftIcon={<Mail className="h-4 w-4" />} value={createDraft.email} onChange={(e) => setCreateDraft({ ...createDraft, email: e.target.value })} required={field("email", "Email").required} disabled={field("email", "Email").disabled} />
+                ) : null}
+                {!field("phone", "Phone").hidden ? (
+                  <Input label={field("phone", "Phone").label} leftIcon={<Phone className="h-4 w-4" />} value={createDraft.phone} onChange={(e) => setCreateDraft({ ...createDraft, phone: e.target.value })} required={field("phone", "Phone").required} disabled={field("phone", "Phone").disabled} />
+                ) : null}
               </div>
-              <Input label="TRN" value={createDraft.trn} onChange={(e) => setCreateDraft({ ...createDraft, trn: e.target.value })} />
-              <label className="block space-y-1.5">
-                <span className="text-sm font-medium text-slate-700">Address</span>
-                <textarea
-                  value={createDraft.address}
-                  onChange={(event) => setCreateDraft({ ...createDraft, address: event.target.value })}
-                  className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15"
-                />
-              </label>
+              {!field("trn", "TRN").hidden ? (
+                <Input label={field("trn", "TRN").label} value={createDraft.trn} onChange={(e) => setCreateDraft({ ...createDraft, trn: e.target.value })} required={field("trn", "TRN").required} disabled={field("trn", "TRN").disabled} />
+              ) : null}
+              {!field("address", "Address").hidden ? (
+                <label className="block space-y-1.5">
+                  <span className="text-sm font-medium text-slate-700">{field("address", "Address").label}</span>
+                  <textarea
+                    value={createDraft.address}
+                    required={field("address", "Address").required}
+                    disabled={field("address", "Address").disabled}
+                    onChange={(event) => setCreateDraft({ ...createDraft, address: event.target.value })}
+                    className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15 disabled:bg-slate-50 disabled:text-slate-500"
+                  />
+                </label>
+              ) : null}
               <Button type="submit" loading={isPending} fullWidth>Create supplier</Button>
             </form>
           </section>
@@ -331,21 +348,35 @@ export function SuppliersClient({ initialData }: { initialData: SuppliersRespons
                   <h2 className="font-semibold text-slate-950">Edit supplier</h2>
                   <p className="mt-1 text-sm text-slate-500">Created {formatDate(selected.createdAt)}</p>
                 </div>
-                <Input label="Supplier name" value={editDraft.name} onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })} required />
-                <Input label="Contact person" value={editDraft.contactPerson} onChange={(e) => setEditDraft({ ...editDraft, contactPerson: e.target.value })} />
+                {!field("name", "Supplier name").hidden ? (
+                  <Input label={field("name", "Supplier name").label} value={editDraft.name} onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })} required={field("name", "Supplier name").required} disabled={field("name", "Supplier name").disabled} />
+                ) : null}
+                {!field("contactPerson", "Contact person").hidden ? (
+                  <Input label={field("contactPerson", "Contact person").label} value={editDraft.contactPerson} onChange={(e) => setEditDraft({ ...editDraft, contactPerson: e.target.value })} required={field("contactPerson", "Contact person").required} disabled={field("contactPerson", "Contact person").disabled} />
+                ) : null}
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Input label="Email" type="email" value={editDraft.email} onChange={(e) => setEditDraft({ ...editDraft, email: e.target.value })} />
-                  <Input label="Phone" value={editDraft.phone} onChange={(e) => setEditDraft({ ...editDraft, phone: e.target.value })} />
+                  {!field("email", "Email").hidden ? (
+                    <Input label={field("email", "Email").label} type="email" value={editDraft.email} onChange={(e) => setEditDraft({ ...editDraft, email: e.target.value })} required={field("email", "Email").required} disabled={field("email", "Email").disabled} />
+                  ) : null}
+                  {!field("phone", "Phone").hidden ? (
+                    <Input label={field("phone", "Phone").label} value={editDraft.phone} onChange={(e) => setEditDraft({ ...editDraft, phone: e.target.value })} required={field("phone", "Phone").required} disabled={field("phone", "Phone").disabled} />
+                  ) : null}
                 </div>
-                <Input label="TRN" value={editDraft.trn} onChange={(e) => setEditDraft({ ...editDraft, trn: e.target.value })} />
-                <label className="block space-y-1.5">
-                  <span className="text-sm font-medium text-slate-700">Address</span>
-                  <textarea
-                    value={editDraft.address}
-                    onChange={(event) => setEditDraft({ ...editDraft, address: event.target.value })}
-                    className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15"
-                  />
-                </label>
+                {!field("trn", "TRN").hidden ? (
+                  <Input label={field("trn", "TRN").label} value={editDraft.trn} onChange={(e) => setEditDraft({ ...editDraft, trn: e.target.value })} required={field("trn", "TRN").required} disabled={field("trn", "TRN").disabled} />
+                ) : null}
+                {!field("address", "Address").hidden ? (
+                  <label className="block space-y-1.5">
+                    <span className="text-sm font-medium text-slate-700">{field("address", "Address").label}</span>
+                    <textarea
+                      value={editDraft.address}
+                      required={field("address", "Address").required}
+                      disabled={field("address", "Address").disabled}
+                      onChange={(event) => setEditDraft({ ...editDraft, address: event.target.value })}
+                      className="min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15 disabled:bg-slate-50 disabled:text-slate-500"
+                    />
+                  </label>
+                ) : null}
                 <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
                   <Button loading={isPending} onClick={submitEdit}>Save supplier</Button>
                   <Button variant="danger" onClick={deleteSelected}>

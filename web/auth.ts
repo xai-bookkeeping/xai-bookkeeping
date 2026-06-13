@@ -220,12 +220,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
         remember: { label: "Remember me", type: "checkbox" },
+        selectedRole: { label: "Role", type: "text" },
       },
       async authorize(credentials, request) {
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
-        const { email, password, remember } = parsed.data;
+        const { email, password, remember, selectedRole } = parsed.data;
 
         const ip =
           (request as Request).headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
@@ -254,6 +255,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             authProvider: true,
             onboardingCompleted: true,
             passwordLoginEnabled: true,
+            roleAssignments: {
+              where: { active: true },
+              include: { role: true },
+            },
           },
         });
 
@@ -303,6 +308,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!valid) return null;
 
+        const assignedRoles = user.roleAssignments.map((assignment) => assignment.role.name);
+        const fallbackRole = `_${user.role}`;
+        const availableRoles = [...new Set(assignedRoles.length > 0 ? assignedRoles : [fallbackRole])];
+        const activeRoleName = selectedRole && availableRoles.includes(selectedRole) ? selectedRole : availableRoles[0];
+        const activeRole = activeRoleName?.replace(/^_/, "") || user.role;
+
         const sessionExpiresAt = new Date(
           Date.now() + (remember ? REMEMBER_SESSION_SECONDS : STANDARD_SESSION_SECONDS) * 1000,
         );
@@ -324,7 +335,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: user.id,
           email: user.email,
           name: `${user.firstName} ${user.lastName}`,
-          role: user.role,
+          role: activeRole,
+          selectedRole: activeRoleName,
+          assignedRoles: availableRoles,
           companyName: user.companyName ?? "XAI Books workspace",
           remember,
           activeSessionId: activeSession.id,
@@ -348,6 +361,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id!;
         token.role = user.role;
+        token.selectedRole = user.selectedRole;
+        token.assignedRoles = user.assignedRoles;
         token.companyName = user.companyName;
         token.remember = user.remember;
         token.activeSessionId = user.activeSessionId;
@@ -391,6 +406,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       session.user.id = token.id ?? "";
       session.user.role = token.role ?? "USER";
+      session.user.selectedRole = token.selectedRole;
+      session.user.assignedRoles = token.assignedRoles;
       session.user.companyName = token.companyName ?? "";
       session.user.image = token.avatarUrl;
       session.user.authProvider = token.authProvider;

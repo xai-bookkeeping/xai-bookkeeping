@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { InvoicesClient } from "@/components/invoices/InvoicesClient";
 import { db } from "@/lib/db";
+import { getRuntimeFormConfig } from "@/lib/form-runtime";
 
 export const metadata: Metadata = { title: "Invoices" };
 
@@ -38,7 +39,7 @@ export default async function InvoicesPage() {
   const session = await auth();
   if (!session || session.sessionExpired) redirect("/login");
 
-  const [customers, total, invoices] = await db.$transaction([
+  const [customers, total, invoices, formConfig] = await Promise.all([
     db.customer.findMany({
       where: { ownerId: session.user.id, deletedAt: null },
       orderBy: { name: "asc" },
@@ -51,6 +52,7 @@ export default async function InvoicesPage() {
       take: PAGE_SIZE,
       include: { customer: true, lines: { orderBy: { sortOrder: "asc" } } },
     }),
+    getRuntimeFormConfig("invoices"),
   ]);
 
   return (
@@ -62,6 +64,7 @@ export default async function InvoicesPage() {
         pageSize: PAGE_SIZE,
         total,
       }}
+      formConfig={formConfig}
       role={session.user.role}
     />
   );
