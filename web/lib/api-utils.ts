@@ -41,8 +41,11 @@ export async function requestContext() {
 }
 
 export function validationError(error: unknown) {
+  const message =
+    error instanceof Error ? error.message : typeof error === "string" ? error : "Invalid request.";
+
   return NextResponse.json(
-    { error: error instanceof Error ? error.message : "Invalid request." },
+    { error: message },
     { status: 400 },
   );
 }
