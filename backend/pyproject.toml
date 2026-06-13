@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=75.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xai-books-backend"
+version = "0.1.0"
+description = "FastAPI backend foundation for XAI Books"
+requires-python = ">=3.14"
+dependencies = [
+  "fastapi==0.136.3",
+  "pydantic==2.13.4",
+  "pydantic-settings>=2.8,<3",
+  "sqlalchemy==2.0.50",
+  "alembic==1.18.4",
+  "asyncpg==0.31.0",
+  "clerk-backend-api==5.0.7",
+  "psycopg[binary]>=3.2,<4",
+  "svix==1.95.1",
+  "uvicorn[standard]==0.48.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.28,<1",
+  "pytest==9.0.3",
+  "pytest-cov>=6,<7",
+  "pyright>=1.1.400,<2",
+  "ruff>=0.12,<1",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+exclude = ["tests*"]
+
+[tool.pyright]
+include = ["app", "tests"]
+typeCheckingMode = "strict"
+pythonVersion = "3.14"
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "C4"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

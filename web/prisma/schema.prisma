@@ -1,0 +1,868 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("WEB_DATABASE_URL")
+}
+
+model User {
+  id                   String       @id @default(cuid())
+  firstName            String       @map("first_name")
+  lastName             String       @map("last_name")
+  displayName          String?      @map("display_name")
+  username             String?      @unique
+  phone                String?
+  jobTitle             String?      @map("job_title")
+  bio                  String?
+  avatarUrl            String?      @map("avatar_url")
+  lastLoginAt          DateTime?    @map("last_login_at")
+  sessionVersion       Int          @default(1) @map("session_version")
+  googleId             String?      @unique @map("google_id")
+  authProvider         AuthProvider @default(EMAIL) @map("auth_provider")
+  passwordLoginEnabled Boolean      @default(true) @map("password_login_enabled")
+  onboardingCompleted  Boolean      @default(true) @map("onboarding_completed")
+  email                String       @unique
+  passwordHash         String       @map("password_hash")
+  emailVerified        Boolean      @default(false) @map("email_verified")
+  emailVerifiedAt      DateTime?    @map("email_verified_at")
+  status               UserStatus   @default(PENDING)
+  role                 Role         @default(ACCOUNTANT)
+  companyName          String?      @map("company_name")
+  country              String       @default("AE")
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
+
+  verificationTokens  VerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+  loginAttempts       LoginAttempt[]
+  activityLogs        ActivityLog[]
+  company             Company?
+  preferences         UserPreference?
+  sessions            UserSession[]
+  roleAssignments     UserRoleAssignment[]  @relation("AssignedUserRoles")
+  assignedUserRoles   UserRoleAssignment[]  @relation("RoleAssignedBy")
+  updatedSettings     SystemSetting[]
+  savedQueries        SqlSavedQuery[]
+  queryHistory        SqlQueryHistory[]
+  formTemplates       FormTemplate[]        @relation("FormTemplatesCreatedBy")
+  formFields          FormFieldDefinition[] @relation("FormFieldsUpdatedBy")
+  invitationsSent     UserInvitation[]      @relation("InvitedBy")
+  invitationsReceived UserInvitation[]      @relation("InvitedUser")
+  customers           Customer[]
+  suppliers           Supplier[]
+  invoices            Invoice[]             @relation("InvoiceOwner")
+  approvedInvoices    Invoice[]             @relation("InvoiceApprover")
+  postedInvoices      Invoice[]             @relation("InvoicePoster")
+  payments            Payment[]
+  expenses            Expense[]             @relation("ExpenseOwner")
+  approvedExpenses    Expense[]             @relation("ExpenseApprover")
+  accounts            Account[]
+  journalEntries      JournalEntry[]
+  approvalRoutes      ApprovalRoute[]
+
+  @@index([status])
+  @@index([emailVerified])
+  @@index([username])
+  @@index([authProvider])
+  @@index([onboardingCompleted])
+  @@map("xb_users")
+}
+
+model Company {
+  id             String   @id @default(cuid())
+  ownerId        String   @unique @map("owner_id")
+  name           String
+  logoUrl        String?  @map("logo_url")
+  coverImageUrl  String?  @map("cover_image_url")
+  primaryColor   String   @default("#0ea5e9") @map("primary_color")
+  secondaryColor String   @default("#0f172a") @map("secondary_color")
+  accentColor    String   @default("#22c55e") @map("accent_color")
+  website        String?
+  email          String?
+  phone          String?
+  address        String?
+  city           String?
+  country        String   @default("AE")
+  taxNumber      String?  @map("tax_number")
+  currency       String   @default("AED")
+  timezone       String   @default("Asia/Dubai")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@map("xb_companies")
+}
+
+model UserPreference {
+  id         String   @id @default(cuid())
+  userId     String   @unique @map("user_id")
+  theme      Theme    @default(SYSTEM)
+  language   String   @default("en")
+  dateFormat String   @default("dd/MM/yyyy") @map("date_format")
+  timeFormat String   @default("24h") @map("time_format")
+  currency   String   @default("AED")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("xb_user_preferences")
+}
+
+model UserSession {
+  id         String    @id @default(cuid())
+  userId     String    @map("user_id")
+  ip         String?
+  userAgent  String?   @map("user_agent")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  lastSeenAt DateTime  @default(now()) @map("last_seen_at")
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+  @@map("xb_user_sessions")
+}
+
+model UserInvitation {
+  id          String    @id @default(cuid())
+  email       String
+  firstName   String    @map("first_name")
+  lastName    String    @map("last_name")
+  role        Role      @default(ACCOUNTANT)
+  tokenHash   String    @unique @map("token_hash")
+  invitedById String    @map("invited_by_id")
+  userId      String?   @map("user_id")
+  expiresAt   DateTime  @map("expires_at")
+  acceptedAt  DateTime? @map("accepted_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  invitedBy User  @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+  user      User? @relation("InvitedUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([email, createdAt])
+  @@index([invitedById])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("xb_user_invitations")
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([userId])
+  @@map("xb_verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  used      Boolean   @default(false)
+  createdAt DateTime  @default(now()) @map("created_at")
+  usedAt    DateTime? @map("used_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([userId])
+  @@map("xb_password_reset_tokens")
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  email     String
+  ip        String?
+  success   Boolean
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([email, createdAt])
+  @@index([ip, createdAt])
+  @@map("xb_login_attempts")
+}
+
+model ActivityLog {
+  id        String      @id @default(cuid())
+  userId    String?     @map("user_id")
+  email     String?
+  action    AuditAction
+  ip        String?
+  userAgent String?     @map("user_agent")
+  metadata  Json?
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([email, createdAt])
+  @@index([action, createdAt])
+  @@map("xb_activity_logs")
+}
+
+model AdminRole {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  description String?
+  status      RoleStatus @default(ACTIVE)
+  systemRole  Boolean    @default(false) @map("system_role")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  permissions     RolePermission[]
+  userAssignments UserRoleAssignment[]
+
+  @@index([status])
+  @@map("xb_admin_roles")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  module      String
+  action      String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  roles RolePermission[]
+
+  @@index([module])
+  @@map("xb_permissions")
+}
+
+model RolePermission {
+  id           String   @id @default(cuid())
+  roleId       String   @map("role_id")
+  permissionId String   @map("permission_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  role       AdminRole  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([permissionId])
+  @@map("xb_role_permissions")
+}
+
+model UserRoleAssignment {
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id")
+  roleId       String    @map("role_id")
+  assignedById String?   @map("assigned_by_id")
+  active       Boolean   @default(true)
+  assignedAt   DateTime  @default(now()) @map("assigned_at")
+  revokedAt    DateTime? @map("revoked_at")
+
+  user       User      @relation("AssignedUserRoles", fields: [userId], references: [id], onDelete: Cascade)
+  role       AdminRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedBy User?     @relation("RoleAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, roleId])
+  @@index([roleId, active])
+  @@index([userId, active])
+  @@map("xb_user_role_assignments")
+}
+
+model ReferenceDataGroup {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  systemGroup Boolean  @default(false) @map("system_group")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  items ReferenceDataItem[]
+
+  @@index([active])
+  @@map("xb_reference_data_groups")
+}
+
+model ReferenceDataItem {
+  id          String   @id @default(cuid())
+  groupId     String   @map("group_id")
+  code        String
+  label       String
+  description String?
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(100) @map("sort_order")
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  group ReferenceDataGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, code])
+  @@index([groupId, active, sortOrder])
+  @@map("xb_reference_data_items")
+}
+
+model SystemSetting {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  module      String
+  label       String
+  value       String
+  valueType   SettingValueType @default(TEXT) @map("value_type")
+  description String?
+  sensitive   Boolean          @default(false)
+  updatedById String?          @map("updated_by_id")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  updatedBy User? @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([module])
+  @@map("xb_system_settings")
+}
+
+model SqlSavedQuery {
+  id          String   @id @default(cuid())
+  ownerId     String   @map("owner_id")
+  name        String
+  sqlText     String   @map("sql_text")
+  description String?
+  readOnly    Boolean  @default(true) @map("read_only")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, createdAt])
+  @@map("xb_sql_saved_queries")
+}
+
+model SqlQueryHistory {
+  id         String         @id @default(cuid())
+  ownerId    String         @map("owner_id")
+  sqlText    String         @map("sql_text")
+  status     SqlQueryStatus @default(SUCCEEDED)
+  rowCount   Int            @default(0) @map("row_count")
+  durationMs Int?           @map("duration_ms")
+  error      String?
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, createdAt])
+  @@index([status, createdAt])
+  @@map("xb_sql_query_history")
+}
+
+model FormTemplate {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  active      Boolean  @default(true)
+  createdById String?  @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  createdBy User?                 @relation("FormTemplatesCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  fields    FormFieldDefinition[]
+
+  @@index([active])
+  @@map("xb_form_templates")
+}
+
+model FormFieldDefinition {
+  id             String             @id @default(cuid())
+  templateId     String             @map("template_id")
+  fieldName      String             @map("field_name")
+  fieldLabel     String             @map("field_label")
+  groupTitle     String?            @map("group_title")
+  entryMode      FormFieldEntryMode @default(USER_ENTRY) @map("entry_mode")
+  fieldType      FormFieldType      @default(TEXT) @map("field_type")
+  defaultValue   String?            @map("default_value")
+  formula        String?
+  hasFormula     Boolean            @default(false) @map("has_formula")
+  scanField      Boolean            @default(false) @map("scan_field")
+  dependsOn      String?            @map("depends_on")
+  listKey        String?            @map("list_key")
+  allowUserEntry Boolean            @default(true) @map("allow_user_entry")
+  resetToNull    Boolean            @default(false) @map("reset_to_null")
+  sortOrder      Int                @default(100) @map("sort_order")
+  active         Boolean            @default(true)
+  systemField    Boolean            @default(false) @map("system_field")
+  updatedById    String?            @map("updated_by_id")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  template  FormTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  updatedBy User?        @relation("FormFieldsUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@unique([templateId, fieldName])
+  @@index([templateId, active, sortOrder])
+  @@index([listKey])
+  @@map("xb_form_field_definitions")
+}
+
+model ApprovalRoute {
+  id           String               @id @default(cuid())
+  ownerId      String               @map("owner_id")
+  documentType ApprovalDocumentType @map("document_type")
+  name         String
+  minAmount    Decimal              @default(0) @map("min_amount") @db.Decimal(12, 2)
+  maxAmount    Decimal?             @map("max_amount") @db.Decimal(12, 2)
+  approverRole Role                 @default(APPROVER) @map("approver_role")
+  approverId   String?              @map("approver_id")
+  priority     Int                  @default(100)
+  active       Boolean              @default(true)
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, documentType, active, priority])
+  @@index([approverId])
+  @@map("xb_approval_routes")
+}
+
+model Customer {
+  id            String    @id @default(cuid())
+  ownerId       String    @map("owner_id")
+  name          String
+  logoUrl       String?   @map("logo_url")
+  coverImageUrl String?   @map("cover_image_url")
+  contactPerson String?   @map("contact_person")
+  email         String?
+  phone         String?
+  address       String?
+  trn           String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
+
+  @@index([ownerId, deletedAt])
+  @@index([ownerId, name])
+  @@index([ownerId, email])
+  @@map("xb_customers")
+}
+
+model Supplier {
+  id            String    @id @default(cuid())
+  ownerId       String    @map("owner_id")
+  name          String
+  logoUrl       String?   @map("logo_url")
+  coverImageUrl String?   @map("cover_image_url")
+  contactPerson String?   @map("contact_person")
+  email         String?
+  phone         String?
+  address       String?
+  trn           String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@index([ownerId, deletedAt])
+  @@index([ownerId, name])
+  @@index([ownerId, email])
+  @@map("xb_suppliers")
+}
+
+model Invoice {
+  id                 String        @id @default(cuid())
+  ownerId            String        @map("owner_id")
+  customerId         String        @map("customer_id")
+  invoiceNumber      String        @map("invoice_number")
+  status             InvoiceStatus @default(DRAFT)
+  issueDate          DateTime      @map("issue_date")
+  dueDate            DateTime?     @map("due_date")
+  notes              String?
+  subtotal           Decimal       @default(0) @db.Decimal(12, 2)
+  vatTotal           Decimal       @default(0) @map("vat_total") @db.Decimal(12, 2)
+  total              Decimal       @default(0) @db.Decimal(12, 2)
+  approvedById       String?       @map("approved_by_id")
+  approvalRouteId    String?       @map("approval_route_id")
+  assignedApproverId String?       @map("assigned_approver_id")
+  submittedAt        DateTime?     @map("submitted_at")
+  approvedAt         DateTime?     @map("approved_at")
+  postedById         String?       @map("posted_by_id")
+  postedAt           DateTime?     @map("posted_at")
+  paidAt             DateTime?     @map("paid_at")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  deletedAt          DateTime?     @map("deleted_at")
+
+  owner      User          @relation("InvoiceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  customer   Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  approvedBy User?         @relation("InvoiceApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  postedBy   User?         @relation("InvoicePoster", fields: [postedById], references: [id], onDelete: SetNull)
+  lines      InvoiceLine[]
+  payments   Payment[]
+
+  @@unique([ownerId, invoiceNumber])
+  @@index([ownerId, status])
+  @@index([ownerId, issueDate])
+  @@index([customerId])
+  @@map("xb_invoices")
+}
+
+model InvoiceLine {
+  id           String  @id @default(cuid())
+  invoiceId    String  @map("invoice_id")
+  description  String
+  quantity     Decimal @db.Decimal(12, 3)
+  unitPrice    Decimal @map("unit_price") @db.Decimal(12, 2)
+  vatRate      Decimal @default(5.00) @map("vat_rate") @db.Decimal(5, 2)
+  lineSubtotal Decimal @map("line_subtotal") @db.Decimal(12, 2)
+  lineVat      Decimal @map("line_vat") @db.Decimal(12, 2)
+  lineTotal    Decimal @map("line_total") @db.Decimal(12, 2)
+  sortOrder    Int     @default(0) @map("sort_order")
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("xb_invoice_lines")
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  ownerId     String        @map("owner_id")
+  invoiceId   String        @map("invoice_id")
+  amount      Decimal       @db.Decimal(12, 2)
+  method      PaymentMethod
+  paymentDate DateTime      @map("payment_date")
+  reference   String?
+  notes       String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  deletedAt   DateTime?     @map("deleted_at")
+
+  owner   User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  @@index([ownerId, deletedAt])
+  @@index([invoiceId])
+  @@index([paymentDate])
+  @@map("xb_payments")
+}
+
+model Expense {
+  id                 String        @id @default(cuid())
+  ownerId            String        @map("owner_id")
+  supplierId         String        @map("supplier_id")
+  category           String
+  amount             Decimal       @db.Decimal(12, 2)
+  expenseDate        DateTime      @map("expense_date")
+  notes              String?
+  attachmentUrl      String?       @map("attachment_url")
+  status             ExpenseStatus @default(DRAFT)
+  approvedById       String?       @map("approved_by_id")
+  approvalRouteId    String?       @map("approval_route_id")
+  assignedApproverId String?       @map("assigned_approver_id")
+  submittedAt        DateTime?     @map("submitted_at")
+  approvedAt         DateTime?     @map("approved_at")
+  paidAt             DateTime?     @map("paid_at")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  deletedAt          DateTime?     @map("deleted_at")
+
+  owner      User     @relation("ExpenseOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  approvedBy User?    @relation("ExpenseApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@index([ownerId, status])
+  @@index([ownerId, expenseDate])
+  @@index([supplierId])
+  @@index([ownerId, deletedAt])
+  @@map("xb_expenses")
+}
+
+model Account {
+  id          String        @id @default(cuid())
+  ownerId     String        @map("owner_id")
+  code        String
+  name        String
+  type        AccountType
+  status      AccountStatus @default(ACTIVE)
+  description String?
+  systemKey   String?       @map("system_key")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  deletedAt   DateTime?     @map("deleted_at")
+
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  journalLines JournalLine[]
+
+  @@unique([ownerId, code])
+  @@unique([ownerId, systemKey])
+  @@index([ownerId, type])
+  @@index([ownerId, status])
+  @@index([ownerId, deletedAt])
+  @@map("xb_accounts")
+}
+
+model JournalEntry {
+  id          String        @id @default(cuid())
+  ownerId     String        @map("owner_id")
+  entryNumber String        @map("entry_number")
+  entryDate   DateTime      @map("entry_date")
+  status      JournalStatus @default(POSTED)
+  sourceType  SourceType    @map("source_type")
+  sourceId    String?       @map("source_id")
+  memo        String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  owner User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  lines JournalLine[]
+
+  @@unique([ownerId, entryNumber])
+  @@index([ownerId, entryDate])
+  @@index([ownerId, sourceType, sourceId])
+  @@map("xb_journal_entries")
+}
+
+model JournalLine {
+  id             String  @id @default(cuid())
+  journalEntryId String  @map("journal_entry_id")
+  accountId      String  @map("account_id")
+  debit          Decimal @default(0) @db.Decimal(12, 2)
+  credit         Decimal @default(0) @db.Decimal(12, 2)
+  description    String?
+  sortOrder      Int     @default(0) @map("sort_order")
+
+  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  account      Account      @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@index([journalEntryId])
+  @@index([accountId])
+  @@map("xb_journal_lines")
+}
+
+enum Role {
+  USER
+  ADMIN
+  ACCOUNTANT
+  APPROVER
+  VIEWER
+}
+
+enum RoleStatus {
+  ACTIVE
+  INACTIVE
+  SYSTEM
+}
+
+enum SettingValueType {
+  TEXT
+  NUMBER
+  BOOLEAN
+  JSON
+  EMAIL
+}
+
+enum SqlQueryStatus {
+  SUCCEEDED
+  FAILED
+  BLOCKED
+}
+
+enum FormFieldEntryMode {
+  USER_ENTRY
+  MANDATORY
+  DISPLAY_ONLY
+  NOT_DISPLAYED
+}
+
+enum FormFieldType {
+  TEXT
+  TEXTAREA
+  INTEGER
+  NUMBER
+  MONEY
+  BOOLEAN
+  DATE
+  DATE_TIME
+  EMAIL
+  PHONE
+  URL
+  LIST
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  DISABLED
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  EMAIL_AND_GOOGLE
+}
+
+enum ApprovalDocumentType {
+  INVOICE
+  EXPENSE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  POSTED
+  PAID
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CARD
+  CHEQUE
+}
+
+enum ExpenseStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  PAID
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  EXPENSE
+}
+
+enum AccountStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum JournalStatus {
+  DRAFT
+  POSTED
+  REVERSED
+}
+
+enum SourceType {
+  MANUAL
+  INVOICE
+  PAYMENT
+  EXPENSE
+  SYSTEM
+}
+
+enum AuditAction {
+  USER_REGISTERED
+  EMAIL_VERIFICATION_SENT
+  EMAIL_VERIFIED
+  LOGIN_SUCCEEDED
+  LOGIN_FAILED
+  LOGOUT
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
+  PROFILE_UPDATED
+  AVATAR_UPDATED
+  AVATAR_REMOVED
+  COMPANY_UPDATED
+  COMPANY_COVER_UPDATED
+  COMPANY_COVER_REMOVED
+  COMPANY_LOGO_UPDATED
+  COMPANY_LOGO_REMOVED
+  PASSWORD_CHANGED
+  PREFERENCES_UPDATED
+  SESSIONS_REVOKED
+  SESSION_REVOKED
+  TWO_FACTOR_PLACEHOLDER_VIEWED
+  USER_INVITED
+  USER_CREATED_BY_ADMIN
+  USER_UPDATED_BY_ADMIN
+  USER_DEACTIVATED
+  USER_REACTIVATED
+  USER_ROLE_CHANGED
+  USER_INVITE_ACCEPTED
+  USER_INVITE_REVOKED
+  USER_PASSWORD_RESET_SENT_BY_ADMIN
+  GOOGLE_ACCOUNT_CONNECTED
+  GOOGLE_ACCOUNT_DISCONNECTED
+  ONBOARDING_COMPLETED
+  APPROVAL_ROUTE_CREATED
+  APPROVAL_ROUTE_UPDATED
+  APPROVAL_ROUTE_DELETED
+  INVOICE_ASSIGNED_FOR_APPROVAL
+  EXPENSE_SUBMITTED
+  EXPENSE_ASSIGNED_FOR_APPROVAL
+  CUSTOMER_CREATED
+  CUSTOMER_UPDATED
+  CUSTOMER_COVER_UPDATED
+  CUSTOMER_COVER_REMOVED
+  CUSTOMER_LOGO_UPDATED
+  CUSTOMER_LOGO_REMOVED
+  CUSTOMER_DELETED
+  SUPPLIER_CREATED
+  SUPPLIER_UPDATED
+  SUPPLIER_COVER_UPDATED
+  SUPPLIER_COVER_REMOVED
+  SUPPLIER_LOGO_UPDATED
+  SUPPLIER_LOGO_REMOVED
+  SUPPLIER_DELETED
+  ADMIN_ROLE_CREATED
+  ADMIN_ROLE_UPDATED
+  ADMIN_ROLE_DELETED
+  ADMIN_ROLE_CLONED
+  ADMIN_PERMISSION_ASSIGNED
+  ADMIN_PERMISSION_REVOKED
+  ADMIN_USER_ROLE_ASSIGNED
+  ADMIN_USER_ROLE_REVOKED
+  REFERENCE_DATA_CREATED
+  REFERENCE_DATA_UPDATED
+  REFERENCE_DATA_DELETED
+  SYSTEM_SETTING_UPDATED
+  SQL_QUERY_EXECUTED
+  SQL_QUERY_BLOCKED
+  SQL_QUERY_SAVED
+  FORM_TEMPLATE_UPDATED
+  FORM_FIELD_CREATED
+  FORM_FIELD_UPDATED
+  FORM_FIELD_DELETED
+  FORM_FIELD_REORDERED
+  INVOICE_CREATED
+  INVOICE_UPDATED
+  INVOICE_SUBMITTED
+  INVOICE_APPROVED
+  INVOICE_POSTED
+  INVOICE_PAID
+  INVOICE_DELETED
+  PAYMENT_RECORDED
+  PAYMENT_DELETED
+  EXPENSE_CREATED
+  EXPENSE_UPDATED
+  EXPENSE_APPROVED
+  EXPENSE_PAID
+  EXPENSE_DELETED
+}
