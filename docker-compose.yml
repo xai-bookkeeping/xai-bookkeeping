@@ -1,16 +1,14 @@
 services:
   postgres:
     image: postgres:18-bookworm
-    env_file:
-      - .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-xai_books}
       POSTGRES_USER: ${POSTGRES_USER:-xai_books}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
     ports:
-      - "${POSTGRES_PORT:-5432}:${POSTGRES_CONTAINER_PORT:-5432}"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test:
         - CMD-SHELL
@@ -26,67 +24,38 @@ services:
       - "${MAILPIT_SMTP_PORT:-1025}:1025"
       - "${MAILPIT_UI_PORT:-8025}:8025"
     healthcheck:
-      test:
-        - CMD
-        - /mailpit
-        - readyz
+      test: [CMD, /mailpit, readyz]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 5s
 
-  backend:
+  web:
     build:
-      context: ./backend
+      context: ./web
       dockerfile: Dockerfile
     env_file:
-      - .env
+      - ./web/.env
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://xai_books:change-me@postgres:5432/xai_books}
-      API_PORT: ${API_CONTAINER_PORT:-8000}
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: ${POSTGRES_CONTAINER_PORT:-5432}
+      WEB_DATABASE_URL: postgresql://${POSTGRES_USER:-xai_books}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-xai_books}
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      HOSTNAME: "0.0.0.0"
     ports:
-      - "${API_PORT:-8000}:${API_CONTAINER_PORT:-8000}"
-    volumes:
-      - ./backend:/app/backend
-    working_dir: /app/backend
+      - "${WEB_PORT:-3000}:3000"
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_healthy
     healthcheck:
-      test: >
-        python -c "from urllib.request import urlopen; urlopen('http://127.0.0.1:${API_CONTAINER_PORT:-8000}/health')"
+      test:
+        - CMD-SHELL
+        - wget -qO- http://0.0.0.0:3000/api/health || exit 1
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 20s
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    env_file:
-      - .env
-    environment:
-      WEB_PORT: ${WEB_CONTAINER_PORT:-5173}
-    ports:
-      - "${WEB_PORT:-5173}:${WEB_CONTAINER_PORT:-5173}"
-    volumes:
-      - ./frontend:/app/frontend
-      - frontend_node_modules:/app/frontend/node_modules
-    working_dir: /app/frontend
-    depends_on:
-      backend:
-        condition: service_started
-    healthcheck:
-      test: >
-        node -e "fetch('http://127.0.0.1:${WEB_CONTAINER_PORT:-5173}').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
+      start_period: 30s
 
 volumes:
   postgres_data:
-  frontend_node_modules:
