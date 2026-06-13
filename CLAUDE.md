@@ -2,12 +2,16 @@
 
 ## Branch Rules
 
-Always branch from `dev`. Never from `main` or `qa`.
+**Before any task, always run `git status` first. If not on `dev`, check out immediately.**
 
 ```bash
-git checkout dev && git pull origin dev
+git status
+git checkout dev   # mandatory if not already on dev
+git pull origin dev
 git checkout -b feature/your-task-name
 ```
+
+**Never branch from `main` or `qa`. No exceptions.**
 
 Flow: `feature/*` → PR → `dev` → PR → `qa` → PR → `main`
 
