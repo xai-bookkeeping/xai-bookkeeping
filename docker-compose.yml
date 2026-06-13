@@ -51,7 +51,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - wget -qO- http://0.0.0.0:3000/api/health || exit 1
+        - wget -qO- http://0.0.0.0:3000/ || exit 1
       interval: 10s
       timeout: 5s
       retries: 10

@@ -196,6 +196,7 @@ async function resolveGoogleUser(account: Account | null, profile?: Profile): Pr
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   session: {
     strategy: "jwt",
     maxAge: REMEMBER_SESSION_SECONDS,
