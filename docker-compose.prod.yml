@@ -1,0 +1,29 @@
+# Prod: web-only self-host fallback. Talks to an external managed Postgres (Neon).
+# Primary prod target is Vercel/Render/Railway — those build Next.js directly and do
+# NOT use this file. Use this only when self-hosting the container.
+#
+# WEB_DATABASE_URL must come from web/.env (the Neon connection string, sslmode=require).
+# DB_MIGRATE_STRATEGY=deploy makes the entrypoint run `prisma migrate deploy`
+# instead of `db push --accept-data-loss` — never destructive against Neon.
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    env_file:
+      - ./web/.env
+    environment:
+      DB_MIGRATE_STRATEGY: deploy
+      HOSTNAME: "0.0.0.0"
+      NODE_ENV: production
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -qO- http://0.0.0.0:3000/ || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
