@@ -1,0 +1,26 @@
+# Dev: lightweight Postgres-only stack.
+# Intended to run on a remote personal server reachable over a Tailscale tailnet.
+# The app itself runs locally via `npm run dev` and connects through the tailnet
+# (set WEB_DATABASE_URL in web/.env to the tailnet host — see web/.env.dev.example).
+services:
+  postgres:
+    image: postgres:18-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-xai_books}
+      POSTGRES_USER: ${POSTGRES_USER:-xai_books}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-xai_books} -d ${POSTGRES_DB:-xai_books}
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  postgres_data:
