@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"\nimport sys, json, os, subprocess\n\nAUTHORIZED_EMAIL = 'suhaib.athar@gmail.com'\ndata = json.load(sys.stdin)\nfp = data.get('tool_input', {}).get('file_path', '')\nbn = os.path.basename(fp)\n\nif bn in ('CLAUDE.md', 'AGENTS.md'):\n    try:\n        cwd = os.path.dirname(fp) or '.'\n        repo_root = subprocess.check_output(['git', 'rev-parse', '--show-toplevel'], text=True, cwd=cwd).strip()\n        auth_path = os.path.join(repo_root, '.claude', '.edit-auth')\n        if os.path.exists(auth_path):\n            with open(auth_path) as f:\n                if f.read().strip() == AUTHORIZED_EMAIL:\n                    os.remove(auth_path)\n                    sys.exit(0)\n    except Exception:\n        pass\n    print(json.dumps({'decision': 'block', 'reason': bn + ' is write-protected. To authorize: echo \\\"suhaib.athar@gmail.com\\\" > .claude/.edit-auth'}))\n    sys.exit(1)\n\"",
+            "statusMessage": "Checking write protection..."
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "ponytail@ponytail": true
+  }
+}
