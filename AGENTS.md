@@ -2,18 +2,27 @@
 
 ## Branch Rules
 
-**Before any task, always run `git status` first. If not on `dev`, check out immediately.**
+**Before any task, always run `git status` first. If not on `dev`, check out immediately. Always `git pull origin dev` before branching.**
 
 ```bash
 git status
 git checkout dev   # mandatory if not already on dev
-git pull origin dev
+git pull origin dev   # mandatory before any new branch
 git checkout -b feature/your-task-name
 ```
 
 **Never branch from `main` or `qa`. No exceptions.**
 
 Flow: `feature/*` → PR → `dev` → PR → `qa` → PR → `main`
+
+**After merging a `feature/*` branch into `dev`, delete it immediately — both remote and local.**
+
+```bash
+git push origin --delete feature/your-task-name
+git branch -d feature/your-task-name
+```
+
+Delete protection applies only to `dev`, `qa`, and `main`. All other branches are fair game after merge.
 
 ## Commit Style
 
