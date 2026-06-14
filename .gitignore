@@ -35,3 +35,6 @@ postgres-data/
 .DS_Store
 .idea/
 .vscode/
+
+# Claude Code write-authorization token (never commit)
+.claude/.edit-auth
