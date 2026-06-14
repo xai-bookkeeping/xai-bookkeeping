@@ -2,19 +2,63 @@
 
 XAI Books — bookkeeping module for UAE SMEs.
 
-## Quick Start
+## Environments
 
+Three compose files, one per environment. There is no default `docker-compose.yml` — always pass `-f`.
+
+| File | Services | Use |
+|------|----------|-----|
+| `docker-compose.dev.yml` | postgres only | DB for local `npm run dev` (run on a remote/tailnet box) |
+| `docker-compose.qa.yml` | postgres + mailpit + web | full stack in Docker |
+| `docker-compose.prod.yml` | web only | self-host fallback against external Neon DB |
+
+### Dev — local app, remote Postgres over Tailscale
+
+Day-to-day work: the app runs on your laptop, Postgres runs on a remote server reachable over your tailnet.
+
+On the remote server (Postgres only):
 ```bash
-cp web/.env.example web/.env   # first time only — fill in secrets
-docker compose up --build
+docker compose -f docker-compose.dev.yml up -d
 ```
 
-App runs at `http://localhost:5173` (or `WEB_PORT` from `.env`).
+On your laptop:
+```bash
+cp web/.env.dev.example web/.env          # set WEB_DATABASE_URL to the tailnet host
+cd web && npm install
+npm run db:migrate                        # apply schema to the remote DB
+npm run dev                               # http://localhost:3000
+```
+
+### QA — full stack in Docker
 
 ```bash
-docker compose down -v   # stop and wipe database
-docker compose up        # restart without rebuild
+cp web/.env.example web/.env              # first time only — fill in secrets
+docker compose -f docker-compose.qa.yml up --build
 ```
+
+App at `http://localhost:3000` (or `WEB_PORT`); Mailpit UI at `http://localhost:8025`.
+
+```bash
+docker compose -f docker-compose.qa.yml down -v   # stop and wipe database
+docker compose -f docker-compose.qa.yml up        # restart without rebuild
+```
+
+### Prod — Vercel / Render / Railway + Neon
+
+Primary target: deploy `web/` to Vercel/Render/Railway, database on Neon. Copy `.env.production.example`
+values into the platform's env dashboard, then apply migrations against Neon:
+
+```bash
+WEB_DATABASE_URL="<neon-direct-url>" npm run db:migrate:deploy
+```
+
+Self-host fallback (web container against external Neon):
+```bash
+cp .env.production.example web/.env       # set WEB_DATABASE_URL to the Neon connection string
+docker compose -f docker-compose.prod.yml up --build
+```
+The prod container sets `DB_MIGRATE_STRATEGY=deploy`, so it runs `prisma migrate deploy` on startup —
+never the destructive `db push` used by dev/qa.
 
 ---
 
@@ -58,7 +102,8 @@ Copy `web/.env.example` to `web/.env` and fill in:
 
 | Variable | Description |
 |----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string |
+| `WEB_DATABASE_URL` | PostgreSQL connection string **read by Prisma** (`schema.prisma`) |
+| `DATABASE_URL` | Same connection string, kept for conventional tooling/scripts |
 | `AUTH_SECRET` | Random secret — generate with `openssl rand -base64 32` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | OAuth credentials from Google Cloud Console |
 | `NEXT_PUBLIC_APP_URL` | Public URL of the app |
