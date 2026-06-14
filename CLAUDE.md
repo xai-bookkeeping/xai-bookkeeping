@@ -15,6 +15,15 @@ git checkout -b feature/your-task-name
 
 Flow: `feature/*` → PR → `dev` → PR → `qa` → PR → `main`
 
+**After merging a `feature/*` branch into `dev`, delete it immediately — both remote and local.**
+
+```bash
+git push origin --delete feature/your-task-name
+git branch -d feature/your-task-name
+```
+
+Delete protection applies only to `dev`, `qa`, and `main`. All other branches are fair game after merge.
+
 ## Commit Style
 
 Conventional commits: `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`
