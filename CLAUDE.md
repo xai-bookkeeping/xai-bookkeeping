@@ -2,12 +2,12 @@
 
 ## Branch Rules
 
-**Before any task, always run `git status` first. If not on `dev`, check out immediately.**
+**Before any task, always run `git status` first. If not on `dev`, check out immediately. Always `git pull origin dev` before branching.**
 
 ```bash
 git status
 git checkout dev   # mandatory if not already on dev
-git pull origin dev
+git pull origin dev   # mandatory before any new branch
 git checkout -b feature/your-task-name
 ```
 
