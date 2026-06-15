@@ -16,8 +16,8 @@ const { auditMock, authMock, dbMock, headersMock } = vi.hoisted(() => ({
   headersMock: vi.fn(),
 }));
 
-vi.mock("@/auth", () => ({
-  auth: authMock,
+vi.mock("@/lib/get-current-user", () => ({
+  getCurrentUser: authMock,
 }));
 
 vi.mock("@/lib/audit", () => ({

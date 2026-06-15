@@ -41,7 +41,6 @@ export async function PATCH(request: Request) {
       createdAt: true,
       displayName: true,
       email: true,
-      emailVerified: true,
       firstName: true,
       jobTitle: true,
       lastLoginAt: true,

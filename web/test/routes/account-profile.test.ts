@@ -13,8 +13,8 @@ const { auditMock, authMock, dbMock, headersMock } = vi.hoisted(() => ({
   headersMock: vi.fn(),
 }));
 
-vi.mock("@/auth", () => ({
-  auth: authMock,
+vi.mock("@/lib/get-current-user", () => ({
+  getCurrentUser: authMock,
 }));
 
 vi.mock("@/lib/audit", () => ({
@@ -93,7 +93,6 @@ describe("PATCH /api/account/profile", () => {
       createdAt: new Date("2026-06-13T00:00:00.000Z"),
       displayName: null,
       email: "ada@example.com",
-      emailVerified: true,
       firstName: "Ada",
       jobTitle: null,
       lastLoginAt: null,
@@ -139,7 +138,6 @@ describe("PATCH /api/account/profile", () => {
         createdAt: true,
         displayName: true,
         email: true,
-        emailVerified: true,
         firstName: true,
         jobTitle: true,
         lastLoginAt: true,

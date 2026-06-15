@@ -1,54 +1,51 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import type { FormEvent } from "react";
+import { useState } from "react";
+import { useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { acceptInvitationAction } from "@/actions/auth";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { PasswordStrength } from "@/components/ui/PasswordStrength";
+
+function messageFrom(error: unknown) {
+  if (!error) return "Invitation could not be accepted.";
+  if (typeof error === "object" && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+  return "Invitation could not be accepted.";
+}
 
 export function AcceptInvitationForm({ token }: { token: string }) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const { signIn, fetchStatus } = useSignIn();
   const [error, setError] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function accept() {
     setError("");
-    startTransition(async () => {
-      const result = await acceptInvitationAction({ token, password, confirmPassword });
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
-      router.push("/login?invite=accepted");
-    });
+    void signIn.ticket({ ticket: token })
+      .then(async ({ error }) => {
+        if (error) {
+          setError(messageFrom(error));
+          return;
+        }
+        if (signIn.status === "complete") {
+          await signIn.finalize({
+            navigate: ({ decorateUrl }) => {
+              const url = decorateUrl("/onboarding");
+              if (url.startsWith("http")) window.location.href = url;
+              else router.push(url);
+            },
+          });
+        }
+      })
+      .catch((error) => setError(messageFrom(error)));
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <div className="space-y-4">
       {error ? <Alert variant="error">{error}</Alert> : null}
-      <Input
-        autoFocus
-        label="Password"
-        type="password"
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
-      />
-      {password ? <PasswordStrength password={password} /> : null}
-      <Input
-        label="Confirm password"
-        type="password"
-        value={confirmPassword}
-        onChange={(event) => setConfirmPassword(event.target.value)}
-      />
-      <Button type="submit" loading={isPending} fullWidth>
-        Activate account
+      <Button type="button" loading={fetchStatus === "fetching"} fullWidth onClick={accept}>
+        Continue with invitation
       </Button>
-    </form>
+    </div>
   );
 }

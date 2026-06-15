@@ -1,72 +1,88 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useSignIn } from "@clerk/nextjs";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Mail } from "lucide-react";
-import { forgotPasswordSchema, type ForgotPasswordFormData } from "@/lib/validations";
-import { forgotPasswordAction } from "@/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
+import { PasswordStrength } from "@/components/ui/PasswordStrength";
+
+type Step = "email" | "code" | "password" | "done";
+
+function messageFrom(error: unknown) {
+  if (!error) return "Password reset failed. Please try again.";
+  if (typeof error === "object" && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+  return "Password reset failed. Please try again.";
+}
 
 export function ForgotPasswordForm() {
-  const [isPending, startTransition] = useTransition();
-  const [sent, setSent] = useState(false);
-  const [sentEmail, setSentEmail] = useState("");
-  const [serverError, setServerError] = useState<string | null>(null);
+  const router = useRouter();
+  const { signIn, fetchStatus } = useSignIn();
+  const [step, setStep] = useState<Step>("email");
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  const form = useForm<ForgotPasswordFormData>({
-    resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: { email: "" },
-  });
+  const isPending = fetchStatus === "fetching";
 
-  const onSubmit = (data: ForgotPasswordFormData) => {
-    setServerError(null);
-    startTransition(async () => {
-      const result = await forgotPasswordAction(data);
-      if (result?.error) {
-        setServerError(result.error);
-      } else {
-        setSentEmail(data.email);
-        setSent(true);
-      }
-    });
-  };
+  function sendCode() {
+    setError(null);
+    void signIn.create({ identifier: email })
+      .then(async ({ error }) => {
+        if (error) {
+          setError(messageFrom(error));
+          return;
+        }
+        const result = await signIn.resetPasswordEmailCode.sendCode();
+        if (result.error) setError(messageFrom(result.error));
+        else setStep("code");
+      })
+      .catch((error) => setError(messageFrom(error)));
+  }
 
-  if (sent) {
-    return (
-      <div className="w-full max-w-[400px]">
-        <div className="mb-8">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-100 text-sky-600 mb-6">
-            <Mail className="h-7 w-7" />
-          </div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Check your inbox</h2>
-          <p className="mt-3 text-sm leading-relaxed text-slate-500">
-            If an account exists for{" "}
-            <strong className="font-semibold text-slate-700">{sentEmail}</strong>, we&apos;ve sent
-            a password reset link. It expires in 1 hour.
-          </p>
-        </div>
-        <Alert variant="info">
-          Didn&apos;t receive it? Check your spam folder or{" "}
-          <button
-            type="button"
-            onClick={() => { setSent(false); form.reset(); }}
-            className="font-semibold underline underline-offset-2"
-          >
-            try again
-          </button>
-          .
-        </Alert>
-        <p className="mt-6 text-center text-sm text-slate-500">
-          <Link href="/login" className="font-semibold text-sky-600 hover:underline underline-offset-2">
-            ← Back to sign in
-          </Link>
-        </p>
-      </div>
-    );
+  function verifyCode() {
+    setError(null);
+    void signIn.resetPasswordEmailCode.verifyCode({ code })
+      .then(({ error }) => {
+        if (error) setError(messageFrom(error));
+        else setStep("password");
+      })
+      .catch((error) => setError(messageFrom(error)));
+  }
+
+  function submitPassword() {
+    setError(null);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    void signIn.resetPasswordEmailCode.submitPassword({ password })
+      .then(async ({ error }) => {
+        if (error) {
+          setError(messageFrom(error));
+          return;
+        }
+        if (signIn.status === "complete") {
+          await signIn.finalize({
+            navigate: ({ decorateUrl }) => {
+              const url = decorateUrl("/dashboard");
+              if (url.startsWith("http")) window.location.href = url;
+              else router.push(url);
+            },
+          });
+        } else {
+          setStep("done");
+        }
+      })
+      .catch((error) => setError(messageFrom(error)));
   }
 
   return (
@@ -82,33 +98,84 @@ export function ForgotPasswordForm() {
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Reset your password</h2>
         <p className="mt-1.5 text-sm text-slate-500">
-          Enter your work email and we&apos;ll send you a reset link.
+          Clerk will send a one-time code to your work email.
         </p>
       </div>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-4">
-        {serverError && <Alert variant="error">{serverError}</Alert>}
+      <div className="space-y-4">
+        {error ? <Alert variant="error">{error}</Alert> : null}
+        {step === "done" ? (
+          <Alert variant="success" title="Password updated">
+            Your password has been reset. You can sign in with the new password.
+          </Alert>
+        ) : null}
 
-        <Input
-          {...form.register("email")}
-          id="email"
-          type="email"
-          label="Work email"
-          placeholder="reem@lumeninteriors.ae"
-          autoComplete="email"
-          autoFocus
-          leftIcon={<Mail className="h-4 w-4" />}
-          error={form.formState.errors.email?.message}
-        />
+        {step === "email" ? (
+          <>
+            <Input
+              id="email"
+              type="email"
+              label="Work email"
+              placeholder="reem@lumeninteriors.ae"
+              autoComplete="email"
+              autoFocus
+              leftIcon={<Mail className="h-4 w-4" />}
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+            <Button type="button" fullWidth size="lg" loading={isPending} onClick={sendCode}>
+              Send reset code
+            </Button>
+          </>
+        ) : null}
 
-        <Button type="submit" fullWidth size="lg" loading={isPending}>
-          Send reset link
-        </Button>
-      </form>
+        {step === "code" ? (
+          <>
+            <Alert variant="info">Enter the reset code sent to {email}.</Alert>
+            <Input
+              id="code"
+              label="Reset code"
+              inputMode="numeric"
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+            />
+            <Button type="button" fullWidth size="lg" loading={isPending} onClick={verifyCode}>
+              Verify code
+            </Button>
+          </>
+        ) : null}
+
+        {step === "password" ? (
+          <>
+            <Input
+              id="password"
+              type="password"
+              label="New password"
+              placeholder="Min. 8 characters"
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            {password ? <PasswordStrength password={password} /> : null}
+            <Input
+              id="confirmPassword"
+              type="password"
+              label="Confirm new password"
+              placeholder="••••••••"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+            />
+            <Button type="button" fullWidth size="lg" loading={isPending} onClick={submitPassword}>
+              Update password
+            </Button>
+          </>
+        ) : null}
+      </div>
 
       <p className="mt-6 text-center text-sm text-slate-500">
         <Link href="/login" className="font-semibold text-sky-600 hover:underline underline-offset-2">
-          ← Back to sign in
+          Back to sign in
         </Link>
       </p>
     </div>

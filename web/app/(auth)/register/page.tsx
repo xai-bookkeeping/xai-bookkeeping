@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 import { AuthLeft } from "@/components/auth/AuthLeft";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 
@@ -9,6 +11,9 @@ interface Props {
 }
 
 export default async function RegisterPage({ searchParams }: Props) {
+  const { isAuthenticated } = await auth();
+  if (isAuthenticated) redirect("/dashboard");
+
   const { email = "" } = await searchParams;
 
   return (
@@ -19,7 +24,7 @@ export default async function RegisterPage({ searchParams }: Props) {
         features={[
           { text: "Email verification required before sign-in" },
           { text: "Strong passwords with live guidance" },
-          { text: "bcrypt password hashing and secure session cookies" },
+          { text: "Clerk-managed account security and sessions" },
           { text: "Audit logging for key account events" },
           { text: "Built for UAE VAT and AED-first workflows" },
         ]}

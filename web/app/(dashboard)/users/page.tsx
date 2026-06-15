@@ -29,7 +29,6 @@ export default async function UsersPage() {
         jobTitle: true,
         role: true,
         status: true,
-        emailVerified: true,
         lastLoginAt: true,
         createdAt: true,
       },

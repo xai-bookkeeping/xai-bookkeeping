@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { authMock, headersMock } = vi.hoisted(() => ({
-  authMock: vi.fn(),
+const { getCurrentUserMock, headersMock } = vi.hoisted(() => ({
+  getCurrentUserMock: vi.fn(),
   headersMock: vi.fn(),
 }));
 
-vi.mock("@/auth", () => ({
-  auth: authMock,
+vi.mock("@/lib/get-current-user", () => ({
+  getCurrentUser: getCurrentUserMock,
 }));
 
 vi.mock("next/headers", () => ({
@@ -15,13 +15,13 @@ vi.mock("next/headers", () => ({
 
 describe("api-utils", () => {
   beforeEach(() => {
-    authMock.mockReset();
+    getCurrentUserMock.mockReset();
     headersMock.mockReset();
     vi.resetModules();
   });
 
   it("returns an unauthorized response when the session is missing", async () => {
-    authMock.mockResolvedValue(null);
+    getCurrentUserMock.mockResolvedValue(null);
 
     const { requireUser } = await import("@/lib/api-utils");
     const result = await requireUser();
@@ -32,7 +32,7 @@ describe("api-utils", () => {
   });
 
   it("returns an unauthorized response when the session is expired", async () => {
-    authMock.mockResolvedValue({ sessionExpired: true });
+    getCurrentUserMock.mockResolvedValue({ sessionExpired: true });
 
     const { requireUser } = await import("@/lib/api-utils");
     const result = await requireUser();
@@ -43,7 +43,7 @@ describe("api-utils", () => {
   });
 
   it("returns a forbidden response when a non-admin user requests admin access", async () => {
-    authMock.mockResolvedValue({
+    getCurrentUserMock.mockResolvedValue({
       sessionExpired: false,
       user: { id: "user-1", role: "VIEWER" },
     });
@@ -57,7 +57,7 @@ describe("api-utils", () => {
   });
 
   it("returns the active session for an admin user", async () => {
-    authMock.mockResolvedValue({
+    getCurrentUserMock.mockResolvedValue({
       sessionExpired: false,
       user: { id: "admin-1", role: "ADMIN" },
     });

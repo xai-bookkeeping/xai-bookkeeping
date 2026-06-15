@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import type { FormEvent } from "react";
-import { GitBranch, Mail, RefreshCw, Search, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { GitBranch, Mail, Search, ShieldCheck, Users } from "lucide-react";
 import Link from "next/link";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -23,7 +23,6 @@ type ManagedUser = {
   jobTitle: string | null;
   role: ManagedRole | "USER";
   status: ManagedStatus;
-  emailVerified: boolean;
   lastLoginAt: string | null;
   createdAt: string;
 };
@@ -99,7 +98,6 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
   const [selected, setSelected] = useState<ManagedUser | null>(initialData.users[0] ?? null);
   const [approvalRoutes, setApprovalRoutes] = useState<ApprovalRoute[]>([]);
   const [approvers, setApprovers] = useState<ApproverOption[]>([]);
-  const [mode, setMode] = useState<"invite" | "create">("invite");
   const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
   const [draft, setDraft] = useState({
@@ -107,9 +105,6 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
     firstName: "",
     lastName: "",
     role: "ACCOUNTANT" as ManagedRole,
-    status: "ACTIVE" as ManagedStatus,
-    phone: "",
-    jobTitle: "",
   });
   const [routeDraft, setRouteDraft] = useState({
     active: true,
@@ -171,24 +166,17 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
       firstName: "",
       lastName: "",
       role: "ACCOUNTANT",
-      status: "ACTIVE",
-      phone: "",
-      jobTitle: "",
     });
   }
 
   function submitNewUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setNotice(null);
-    const endpoint = mode === "invite" ? "/api/users/invite" : "/api/users";
     startTransition(async () => {
       try {
-        await requestJson(endpoint, { method: "POST", body: JSON.stringify(draft) });
+        await requestJson("/api/users/invite", { method: "POST", body: JSON.stringify(draft) });
         resetDraft();
-        setNotice({
-          type: "success",
-          text: mode === "invite" ? "Invitation sent." : "User created and password setup email sent.",
-        });
+        setNotice({ type: "success", text: "Invitation sent." });
         const next = await requestJson<UsersResponse>("/api/users");
         setData(next);
         setSelected(next.users[0] ?? null);
@@ -229,18 +217,6 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
         setNotice({ type: "success", text: "User updated." });
       } catch (error) {
         setNotice({ type: "error", text: error instanceof Error ? error.message : "Update failed." });
-      }
-    });
-  }
-
-  function sendAction(path: string, success: string) {
-    setNotice(null);
-    startTransition(async () => {
-      try {
-        await requestJson(path, { method: "POST" });
-        setNotice({ type: "success", text: success });
-      } catch (error) {
-        setNotice({ type: "error", text: error instanceof Error ? error.message : "Action failed." });
       }
     });
   }
@@ -363,8 +339,7 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
                   <th className="px-4 py-3 font-semibold">User</th>
                   <th className="px-4 py-3 font-semibold">Role</th>
                   <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold">Verified</th>
-                  <th className="px-4 py-3 font-semibold">Phone</th>
+                    <th className="px-4 py-3 font-semibold">Phone</th>
                   <th className="px-4 py-3 font-semibold">Last login</th>
                   <th className="px-4 py-3 font-semibold">Joined</th>
                   <th className="px-4 py-3 font-semibold">Profile</th>
@@ -404,7 +379,6 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
                         {user.status}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-slate-600">{user.emailVerified ? "Yes" : "No"}</td>
                     <td className="px-4 py-4 text-slate-600">{user.phone || "None"}</td>
                     <td className="px-4 py-4 text-slate-600">{formatDate(user.lastLoginAt)}</td>
                     <td className="px-4 py-4 text-slate-600">{formatDate(user.createdAt)}</td>
@@ -519,11 +493,8 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
 
           <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex gap-2">
-              <Button size="sm" variant={mode === "invite" ? "primary" : "secondary"} onClick={() => setMode("invite")}>
+              <Button size="sm" type="button">
                 <Mail className="h-4 w-4" /> Invite
-              </Button>
-              <Button size="sm" variant={mode === "create" ? "primary" : "secondary"} onClick={() => setMode("create")}>
-                <UserPlus className="h-4 w-4" /> Create
               </Button>
             </div>
             <form onSubmit={submitNewUser} className="mt-5 space-y-4">
@@ -539,23 +510,9 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
                     {roles.map((item) => <option key={item} value={item}>{item}</option>)}
                   </select>
                 </label>
-                {mode === "create" ? (
-                  <label className="space-y-1.5 text-sm font-medium text-slate-700">
-                    Status
-                    <select className="h-10 w-full rounded-xl border border-slate-200 px-3" value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value as ManagedStatus })}>
-                      {statuses.map((item) => <option key={item} value={item}>{item}</option>)}
-                    </select>
-                  </label>
-                ) : null}
               </div>
-              {mode === "create" ? (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Input label="Phone" value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} />
-                  <Input label="Job title" value={draft.jobTitle} onChange={(e) => setDraft({ ...draft, jobTitle: e.target.value })} />
-                </div>
-              ) : null}
               <Button type="submit" loading={isPending} fullWidth>
-                {mode === "invite" ? "Send invitation" : "Create user"}
+                Send invitation
               </Button>
             </form>
           </section>
@@ -596,21 +553,13 @@ export function UsersClient({ initialData }: { initialData: UsersResponse }) {
                   </label>
                 </div>
                 <div className="grid gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
-                  <span>Verified: <strong>{selected.emailVerified ? "Yes" : "No"}</strong></span>
+                  <span>Account status: <strong>{selected.status}</strong></span>
                   <span>Last login: <strong>{formatDate(selected.lastLoginAt)}</strong></span>
                 </div>
                 <div className="grid gap-2">
                   <Button loading={isPending} onClick={saveSelected}>
                     <ShieldCheck className="h-4 w-4" /> Save user
                   </Button>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <Button variant="secondary" onClick={() => sendAction(`/api/users/${selected.id}/reset-password`, "Password setup email sent.")}>
-                      <RefreshCw className="h-4 w-4" /> Reset
-                    </Button>
-                    <Button variant="secondary" onClick={() => sendAction(`/api/users/${selected.id}/resend-verification`, "Verification email sent.")}>
-                      <Mail className="h-4 w-4" /> Verify
-                    </Button>
-                  </div>
                 </div>
               </div>
             ) : (

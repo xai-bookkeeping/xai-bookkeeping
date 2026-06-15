@@ -9,27 +9,23 @@ import {
   CheckCircle2,
   Clock,
   ImageIcon,
-  KeyRound,
   Monitor,
   Shield,
   User,
 } from "lucide-react";
+import { UserProfile } from "@clerk/nextjs";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { PasswordStrength } from "@/components/ui/PasswordStrength";
-import { googleSignInAction } from "@/actions/auth";
 import { cn } from "@/lib/cn";
 
 type ProfileState = {
   accountStatus: string;
-  authProvider: string;
   avatarUrl: string;
   bio: string;
   createdAt: string;
   displayName: string;
   email: string;
-  emailVerified: boolean;
   firstName: string;
   jobTitle: string;
   lastLoginAt: string;
@@ -37,8 +33,6 @@ type ProfileState = {
   phone: string;
   role: string;
   username: string;
-  googleConnected: boolean;
-  passwordLoginEnabled: boolean;
 };
 
 type CompanyState = {
@@ -75,26 +69,14 @@ type ActivityItem = {
   ip: string | null;
 };
 
-type SessionItem = {
-  createdAt: string;
-  expiresAt: string;
-  id: string;
-  ip: string | null;
-  lastSeenAt: string;
-  revokedAt: string;
-  userAgent: string | null;
-};
-
 type SettingsTab = "profile" | "company" | "security" | "preferences" | "activity";
 
 interface SettingsClientProps {
-  activeSessionId: string;
   initialActiveTab?: SettingsTab;
   initialActivity: ActivityItem[];
   initialCompany: CompanyState;
   initialPreferences: PreferencesState;
   initialProfile: ProfileState;
-  initialSessions: SessionItem[];
 }
 
 const tabs: Array<{ id: SettingsTab; label: string; icon: typeof User }> = [
@@ -118,9 +100,7 @@ function formatDate(value: string) {
 }
 
 function formatAccountType(profile: ProfileState) {
-  if (profile.authProvider === "EMAIL_AND_GOOGLE") return "Email + Google";
-  if (profile.authProvider === "GOOGLE") return "Google";
-  return "Email + Password";
+  return profile.email ? "Clerk account" : "Clerk";
 }
 
 function colorValue(value: string, fallback: string) {
@@ -261,25 +241,17 @@ function CardHeader({
 }
 
 export function SettingsClient({
-  activeSessionId,
   initialActiveTab = "profile",
   initialActivity,
   initialCompany,
   initialPreferences,
   initialProfile,
-  initialSessions,
 }: SettingsClientProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialActiveTab);
   const [profile, setProfile] = useState(initialProfile);
   const [company, setCompany] = useState(initialCompany);
   const [preferences, setPreferences] = useState(initialPreferences);
   const [activity, setActivity] = useState(initialActivity);
-  const [sessions, setSessions] = useState(initialSessions);
-  const [password, setPassword] = useState({
-    confirmPassword: "",
-    currentPassword: "",
-    password: "",
-  });
   const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [activityFilter, setActivityFilter] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -339,22 +311,6 @@ export function SettingsClient({
         setNotice({ type: "success", text: "Preferences saved." });
       } catch (error) {
         setNotice({ type: "error", text: error instanceof Error ? error.message : "Update failed." });
-      }
-    });
-  }
-
-  function submitPassword() {
-    setNotice(null);
-    startTransition(async () => {
-      try {
-        await requestJson<{ ok: true }>("/api/account/password", {
-          body: JSON.stringify(password),
-          method: "POST",
-        });
-        setPassword({ confirmPassword: "", currentPassword: "", password: "" });
-        setNotice({ type: "success", text: "Password changed. Other sessions were revoked." });
-      } catch (error) {
-        setNotice({ type: "error", text: error instanceof Error ? error.message : "Password change failed." });
       }
     });
   }
@@ -431,59 +387,6 @@ export function SettingsClient({
         setNotice({ type: "success", text: "Image removed." });
       } catch {
         setNotice({ type: "error", text: "Image removal failed." });
-      }
-    });
-  }
-
-  function revokeSession(id: string) {
-    startTransition(async () => {
-      await fetch(`/api/account/sessions/${id}`, { method: "DELETE" });
-      setSessions((current) =>
-        current.map((item) =>
-          item.id === id ? { ...item, revokedAt: new Date().toISOString() } : item,
-        ),
-      );
-    });
-  }
-
-  function revokeAllSessions() {
-    startTransition(async () => {
-      await fetch("/api/account/sessions", { method: "DELETE" });
-      const now = new Date().toISOString();
-      setSessions((current) => current.map((item) => ({ ...item, revokedAt: now })));
-      setNotice({ type: "success", text: "All sessions were revoked. Sign in again to continue." });
-    });
-  }
-
-  function connectGoogle() {
-    setNotice(null);
-    startTransition(async () => {
-      const result = await googleSignInAction("/settings");
-      if (result?.error) setNotice({ type: "error", text: result.error });
-    });
-  }
-
-  function disconnectGoogle() {
-    setNotice(null);
-    startTransition(async () => {
-      try {
-        const result = await requestJson<{
-          authProvider: string;
-          googleConnected: boolean;
-        }>("/api/account/oauth/google", {
-          method: "DELETE",
-        });
-        setProfile((current) => ({
-          ...current,
-          authProvider: result.authProvider,
-          googleConnected: result.googleConnected,
-        }));
-        setNotice({ type: "success", text: "Google account disconnected." });
-      } catch (error) {
-        setNotice({
-          type: "error",
-          text: error instanceof Error ? error.message : "Google disconnect failed.",
-        });
       }
     });
   }
@@ -747,101 +650,12 @@ export function SettingsClient({
           ) : null}
 
           {activeTab === "security" ? (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader description="Control how you sign in to XAI Books." icon={Shield} title="Authentication methods" />
-                <div className="space-y-4 p-5">
-                  <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 p-4">
-                    <div className="flex items-center gap-3">
-                      {profile.avatarUrl ? (
-                        <img src={profile.avatarUrl} alt="" className="h-11 w-11 rounded-full object-cover" />
-                      ) : (
-                        <div className="grid h-11 w-11 place-items-center rounded-full bg-slate-950 text-sm font-black text-white">
-                          {initials(profile.firstName, profile.lastName)}
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-semibold text-slate-950">Google account</p>
-                        <p className="text-sm text-slate-500">
-                          {profile.googleConnected ? "Google Connected" : "Google Not Connected"}
-                        </p>
-                      </div>
-                    </div>
-                    {profile.googleConnected ? (
-                      <Button type="button" variant="secondary" onClick={disconnectGoogle} loading={isPending}>
-                        Disconnect Google
-                      </Button>
-                    ) : (
-                      <Button type="button" onClick={connectGoogle}>
-                        Connect Google Account
-                      </Button>
-                    )}
-                  </div>
-                  <div className="grid gap-3 rounded-xl bg-slate-50 p-4 text-sm md:grid-cols-3">
-                    <div>
-                      <span className="text-slate-500">Account Type</span>
-                      <p className="font-semibold text-slate-900">{formatAccountType(profile)}</p>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Email password</span>
-                      <p className="font-semibold text-slate-900">
-                        {profile.passwordLoginEnabled ? "Enabled" : "Not set"}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Provider</span>
-                      <p className="font-semibold text-slate-900">{profile.authProvider.replaceAll("_", " ")}</p>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-              <Card>
-                <CardHeader description="Change your password and protect your account." icon={KeyRound} title="Password management" />
-                <div className="space-y-4 p-5">
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <Input label="Current password" type="password" value={password.currentPassword} onChange={(e) => setPassword({ ...password, currentPassword: e.target.value })} />
-                    <Input label="New password" type="password" value={password.password} onChange={(e) => setPassword({ ...password, password: e.target.value })} />
-                    <Input label="Confirm password" type="password" value={password.confirmPassword} onChange={(e) => setPassword({ ...password, confirmPassword: e.target.value })} />
-                  </div>
-                  {password.password ? <PasswordStrength password={password.password} /> : null}
-                  <Button loading={isPending} onClick={submitPassword}>Change password</Button>
-                </div>
-              </Card>
-              <Card>
-                <CardHeader description="Review active sessions and revoke access." icon={Shield} title="Security settings" />
-                <div className="space-y-4 p-5">
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                    <p className="font-semibold text-amber-900">Two-factor authentication</p>
-                    <p className="mt-1 text-sm text-amber-800">Placeholder ready. SMS/authenticator setup will be enabled in a later security phase.</p>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <div>
-                      <p className="font-semibold">Active sessions</p>
-                      <p className="text-sm text-slate-500">Last login: {formatDate(profile.lastLoginAt)}</p>
-                    </div>
-                    <Button variant="danger" onClick={revokeAllSessions}>Sign out all devices</Button>
-                  </div>
-                  <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
-                    {sessions.map((item) => (
-                      <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
-                        <div>
-                          <p className="font-semibold text-slate-900">{item.userAgent ?? "Unknown device"}</p>
-                          <p className="text-slate-500">IP {item.ip ?? "unknown"} · Last seen {formatDate(item.lastSeenAt)}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={cn("rounded-full px-2 py-1 text-xs font-semibold", item.revokedAt ? "bg-slate-100 text-slate-500" : "bg-emerald-50 text-emerald-700")}>
-                            {item.revokedAt ? "Revoked" : item.id === activeSessionId ? "Current" : "Active"}
-                          </span>
-                          {!item.revokedAt && item.id !== activeSessionId ? (
-                            <Button size="sm" variant="secondary" onClick={() => revokeSession(item.id)}>Revoke</Button>
-                          ) : null}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader description="Manage passwords, social accounts, MFA, and devices in Clerk." icon={Shield} title="Security" />
+              <div className="p-5">
+                <UserProfile routing="hash" />
+              </div>
+            </Card>
           ) : null}
 
           {activeTab === "preferences" ? (

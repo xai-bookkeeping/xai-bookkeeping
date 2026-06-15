@@ -24,10 +24,6 @@ export default async function SettingsPage({
         orderBy: { createdAt: "desc" },
         take: 100,
       },
-      sessions: {
-        orderBy: { lastSeenAt: "desc" },
-        take: 20,
-      },
     },
   });
 
@@ -35,7 +31,6 @@ export default async function SettingsPage({
 
   return (
     <SettingsClient
-      activeSessionId={session.activeSessionId ?? ""}
       initialActiveTab={tab === "company" ? "company" : undefined}
       initialActivity={user.activityLogs.map((item) => ({
         action: item.action,
@@ -70,13 +65,11 @@ export default async function SettingsPage({
       }}
       initialProfile={{
         accountStatus: user.status,
-        authProvider: user.authProvider,
         avatarUrl: user.avatarUrl ?? "",
         bio: user.bio ?? "",
         createdAt: user.createdAt.toISOString(),
         displayName: user.displayName ?? `${user.firstName} ${user.lastName}`,
         email: user.email,
-        emailVerified: user.emailVerified,
         firstName: user.firstName,
         jobTitle: user.jobTitle ?? "",
         lastLoginAt: user.lastLoginAt?.toISOString() ?? "",
@@ -84,18 +77,7 @@ export default async function SettingsPage({
         phone: user.phone ?? "",
         role: user.role,
         username: user.username ?? "",
-        googleConnected: Boolean(user.googleId),
-        passwordLoginEnabled: user.passwordLoginEnabled,
       }}
-      initialSessions={user.sessions.map((item) => ({
-        createdAt: item.createdAt.toISOString(),
-        expiresAt: item.expiresAt.toISOString(),
-        id: item.id,
-        ip: item.ip,
-        lastSeenAt: item.lastSeenAt.toISOString(),
-        revokedAt: item.revokedAt?.toISOString() ?? "",
-        userAgent: item.userAgent,
-      }))}
     />
   );
 }
