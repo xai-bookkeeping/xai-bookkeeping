@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useClerk } from "@clerk/nextjs";
 import {
   Bell,
   BookOpen,
@@ -321,9 +322,11 @@ export function AppShell({
   user: ShellUser;
 }) {
   const pathname = usePathname();
+  const { signOut } = useClerk();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [signOutPending, startSignOutTransition] = useTransition();
   const pageLabel = currentPageLabel(pathname);
   const themeStyle = {
     "--primary-color": company.primaryColor || "#0ea5e9",
@@ -340,6 +343,13 @@ export function AppShell({
     setCollapsed((current) => {
       window.localStorage.setItem("xai.sidebar.collapsed", String(!current));
       return !current;
+    });
+  }
+
+  function handleSignOut() {
+    startSignOutTransition(async () => {
+      await signOutAction();
+      await signOut({ redirectUrl: "/login" });
     });
   }
 
@@ -444,11 +454,16 @@ export function AppShell({
                       Notifications
                     </button>
                   </div>
-                  <form action={signOutAction} className="pt-2">
-                    <button type="submit" className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50">
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      disabled={signOutPending}
+                      onClick={handleSignOut}
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    >
                       <LogOut className="h-4 w-4" /> Logout
                     </button>
-                  </form>
+                  </div>
                 </div>
               ) : null}
             </div>

@@ -26,8 +26,6 @@ export async function PATCH(request: NextRequest, { params }: Props) {
     select: {
       id: true,
       email: true,
-      emailVerified: true,
-      passwordLoginEnabled: true,
       onboardingCompleted: true,
       role: true,
       status: true,
@@ -83,17 +81,7 @@ export async function PATCH(request: NextRequest, { params }: Props) {
       ...("jobTitle" in input ? { jobTitle: input.jobTitle || null } : {}),
       ...("role" in input ? { role: input.role } : {}),
       ...("status" in input ? { status: input.status } : {}),
-      ...("emailVerified" in input
-        ? {
-            emailVerified: input.emailVerified,
-            emailVerifiedAt: input.emailVerified ? new Date() : null,
-          }
-        : {}),
-      ...("passwordLoginEnabled" in input ? { passwordLoginEnabled: input.passwordLoginEnabled } : {}),
       ...("onboardingCompleted" in input ? { onboardingCompleted: input.onboardingCompleted } : {}),
-      ...(nextStatus === "DISABLED" || nextStatus === "SUSPENDED"
-        ? { sessionVersion: { increment: 1 } }
-        : {}),
     },
     select: {
       id: true,
@@ -106,8 +94,6 @@ export async function PATCH(request: NextRequest, { params }: Props) {
       jobTitle: true,
       role: true,
       status: true,
-      emailVerified: true,
-      passwordLoginEnabled: true,
       onboardingCompleted: true,
       lastLoginAt: true,
       createdAt: true,
@@ -145,13 +131,6 @@ export async function PATCH(request: NextRequest, { params }: Props) {
     ]);
   }
 
-  if (nextStatus === "DISABLED" || nextStatus === "SUSPENDED") {
-    await db.userSession.updateMany({
-      where: { userId: id, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
-  }
-
   const { ip, userAgent } = await requestContext();
   await logAuditEvent({
     action:
@@ -171,9 +150,7 @@ export async function PATCH(request: NextRequest, { params }: Props) {
       before: { role: existing.role, status: existing.status, username: existing.username },
       after: {
         email: user.email,
-        emailVerified: user.emailVerified,
         onboardingCompleted: user.onboardingCompleted,
-        passwordLoginEnabled: user.passwordLoginEnabled,
         role: nextRole,
         roleIds: input.roleIds,
         status: nextStatus,

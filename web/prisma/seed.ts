@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
 
 const db = new PrismaClient();
 
@@ -13,11 +12,9 @@ async function main() {
       email: "admin@xaibooks.ae",
       firstName: "XAI",
       lastName: "Admin",
+      clerkUserId: "seed_admin",
       companyName: "XAI Books",
       country: "AE",
-      passwordHash: await bcrypt.hash("Admin@12345!", 12),
-      emailVerified: true,
-      emailVerifiedAt: new Date(),
       role: "ADMIN",
       status: "ACTIVE",
     },
@@ -30,11 +27,9 @@ async function main() {
       email: "demo@xaibooks.ae",
       firstName: "Demo",
       lastName: "User",
+      clerkUserId: "seed_demo",
       companyName: "Lumen Interiors LLC",
       country: "AE",
-      passwordHash: await bcrypt.hash("Demo@12345!", 12),
-      emailVerified: true,
-      emailVerifiedAt: new Date(),
       role: "ACCOUNTANT",
       status: "ACTIVE",
     },

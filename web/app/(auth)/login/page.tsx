@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 import { AuthLeft } from "@/components/auth/AuthLeft";
 import { LoginForm } from "@/components/auth/LoginForm";
 
 export const metadata: Metadata = { title: "Sign in" };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const { isAuthenticated } = await auth();
+  if (isAuthenticated) redirect("/dashboard");
+
   return (
     <>
       <AuthLeft

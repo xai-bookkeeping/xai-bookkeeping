@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { ProfileShell } from "@/components/profile/ProfileShell";
 import { db } from "@/lib/db";
-import { dateTime, initials, shortDate, timelineFromActivity } from "@/lib/profile-utils";
+import { initials, shortDate, timelineFromActivity } from "@/lib/profile-utils";
 
 export const metadata: Metadata = { title: "User profile" };
 
@@ -23,7 +23,6 @@ export default async function UserProfilePage({ params }: Props) {
     where: { id },
     include: {
       activityLogs: { orderBy: { createdAt: "desc" }, take: 20 },
-      sessions: { orderBy: { lastSeenAt: "desc" }, take: 5 },
     },
   });
   if (!user) redirect("/users");
@@ -37,7 +36,7 @@ export default async function UserProfilePage({ params }: Props) {
         { label: "Role", value: user.role },
         { label: "Last login", value: user.lastLoginAt ? shortDate(user.lastLoginAt) : "Never" },
         { label: "Activity count", value: String(user.activityLogs.length) },
-        { label: "Sessions", value: String(user.sessions.filter((item) => !item.revokedAt).length) },
+        { label: "Status", value: user.status },
       ]}
       name={name}
       status={user.status}
@@ -59,13 +58,13 @@ export default async function UserProfilePage({ params }: Props) {
           ),
         },
         {
-          label: "Related Records",
+          label: "Activity",
           content: (
             <div className="divide-y divide-slate-100">
-              {user.sessions.map((item) => (
+              {user.activityLogs.map((item) => (
                 <div key={item.id} className="py-3 text-sm">
-                  <p className="font-semibold text-slate-900">{item.userAgent ?? "Unknown device"}</p>
-                  <p className="text-slate-500">Last seen {dateTime(item.lastSeenAt)} | {item.revokedAt ? "Revoked" : "Active"}</p>
+                  <p className="font-semibold text-slate-900">{item.action.replace(/_/g, " ")}</p>
+                  <p className="text-slate-500">{shortDate(item.createdAt)} | {item.ip ?? "Unknown IP"}</p>
                 </div>
               ))}
             </div>

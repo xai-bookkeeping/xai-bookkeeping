@@ -1,13 +1,5 @@
 import { z } from "zod";
 
-const strongPasswordSchema = z
-  .string()
-  .min(8, "Password must be at least 8 characters")
-  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-  .regex(/[0-9]/, "Password must contain at least one number")
-  .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character");
-
 const phoneSchema = z
   .string()
   .trim()
@@ -61,18 +53,6 @@ export const preferencesUpdateSchema = z.object({
   currency: z.string().trim().min(3).max(3),
 });
 
-export const changePasswordSchema = z
-  .object({
-    currentPassword: z.string().min(1, "Current password is required"),
-    password: strongPasswordSchema,
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
-
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
 export type CompanyUpdateInput = z.infer<typeof companyUpdateSchema>;
 export type PreferencesUpdateInput = z.infer<typeof preferencesUpdateSchema>;
-export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
