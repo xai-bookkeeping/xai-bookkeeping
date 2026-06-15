@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useClerk } from "@clerk/nextjs";
 import {
   Bell,
   BookOpen,
@@ -197,15 +198,19 @@ function SidebarContent({
   collapsed,
   company,
   onNavigate,
+  onSignOut,
   onToggle,
   pathname,
+  signOutPending,
   user,
 }: {
   collapsed: boolean;
   company: ShellCompany;
   onNavigate?: () => void;
+  onSignOut: () => void;
   onToggle?: () => void;
   pathname: string;
+  signOutPending: boolean;
   user: ShellUser;
 }) {
   const visibleGroups = useMemo(
@@ -297,11 +302,14 @@ function SidebarContent({
                 <Link href="/settings" className="rounded-xl px-2 py-2 text-center text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-950">
                   Settings
                 </Link>
-                <form action={signOutAction}>
-                  <button type="submit" className="w-full rounded-xl px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-950">
-                    Logout
-                  </button>
-                </form>
+                <button
+                  type="button"
+                  disabled={signOutPending}
+                  onClick={onSignOut}
+                  className="w-full rounded-xl px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-950 disabled:opacity-60"
+                >
+                  Logout
+                </button>
               </div>
             </>
           ) : null}
@@ -321,9 +329,11 @@ export function AppShell({
   user: ShellUser;
 }) {
   const pathname = usePathname();
+  const { signOut } = useClerk();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [signOutPending, startSignOutTransition] = useTransition();
   const pageLabel = currentPageLabel(pathname);
   const themeStyle = {
     "--primary-color": company.primaryColor || "#0ea5e9",
@@ -343,6 +353,17 @@ export function AppShell({
     });
   }
 
+  function handleSignOut() {
+    startSignOutTransition(() => {
+      const redirectToLogin = () => {
+        window.location.replace("/login");
+      };
+
+      void signOutAction().catch(() => undefined);
+      void signOut(redirectToLogin).catch(redirectToLogin);
+    });
+  }
+
   return (
     <div className="min-h-dvh bg-[#f7f8fb] text-slate-950" style={themeStyle}>
       <aside
@@ -354,8 +375,10 @@ export function AppShell({
         <SidebarContent
           collapsed={collapsed}
           company={company}
+          onSignOut={handleSignOut}
           onToggle={toggleCollapsed}
           pathname={pathname}
+          signOutPending={signOutPending}
           user={user}
         />
       </aside>
@@ -444,11 +467,16 @@ export function AppShell({
                       Notifications
                     </button>
                   </div>
-                  <form action={signOutAction} className="pt-2">
-                    <button type="submit" className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50">
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      disabled={signOutPending}
+                      onClick={handleSignOut}
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    >
                       <LogOut className="h-4 w-4" /> Logout
                     </button>
-                  </form>
+                  </div>
                 </div>
               ) : null}
             </div>
@@ -480,7 +508,9 @@ export function AppShell({
               collapsed={false}
               company={company}
               onNavigate={() => setMobileOpen(false)}
+              onSignOut={handleSignOut}
               pathname={pathname}
+              signOutPending={signOutPending}
               user={user}
             />
           </aside>

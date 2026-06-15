@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { resetPasswordSchema } from "@/lib/validations";
 
 export const managedRoles = ["ADMIN", "ACCOUNTANT", "APPROVER", "VIEWER"] as const;
 export const managedStatuses = ["PENDING", "ACTIVE", "SUSPENDED", "DISABLED"] as const;
@@ -16,12 +15,6 @@ export const inviteUserSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(80),
   lastName: z.string().trim().min(1, "Last name is required").max(80),
   role: z.enum(managedRoles).default("ACCOUNTANT"),
-});
-
-export const createUserSchema = inviteUserSchema.extend({
-  status: z.enum(managedStatuses).default("ACTIVE"),
-  phone: z.string().trim().max(40).optional().default(""),
-  jobTitle: z.string().trim().max(120).optional().default(""),
 });
 
 export const updateManagedUserSchema = z.object({
@@ -42,13 +35,8 @@ export const updateManagedUserSchema = z.object({
   role: z.enum(managedRoles).optional(),
   roleIds: z.array(z.string().min(1)).optional(),
   status: z.enum(managedStatuses).optional(),
-  emailVerified: z.boolean().optional(),
-  passwordLoginEnabled: z.boolean().optional(),
   onboardingCompleted: z.boolean().optional(),
 });
 
-export const acceptInvitationSchema = resetPasswordSchema;
-
 export type InviteUserInput = z.infer<typeof inviteUserSchema>;
-export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateManagedUserInput = z.infer<typeof updateManagedUserSchema>;

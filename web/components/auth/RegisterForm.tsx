@@ -1,22 +1,34 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuth, useSignUp } from "@clerk/nextjs";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Mail, User } from "lucide-react";
 import { registerSchema, type RegisterFormData } from "@/lib/validations";
-import { googleSignInAction, registerAction } from "@/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
 import { PasswordStrength } from "@/components/ui/PasswordStrength";
 
+function messageFrom(error: unknown) {
+  if (!error) return "Sign up failed. Please try again.";
+  if (typeof error === "object" && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+  return "Sign up failed. Please try again.";
+}
+
 export function RegisterForm({ prefillEmail = "" }: { prefillEmail?: string }) {
-  const [isPending, startTransition] = useTransition();
-  const [isGooglePending, startGoogleTransition] = useTransition();
+  const router = useRouter();
+  const { isSignedIn } = useAuth();
+  const { signUp, fetchStatus } = useSignUp();
   const [serverError, setServerError] = useState<string | null>(null);
   const [watchedPassword, setWatchedPassword] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -29,20 +41,70 @@ export function RegisterForm({ prefillEmail = "" }: { prefillEmail?: string }) {
     },
   });
 
+  const isPending = fetchStatus === "fetching";
+
+  async function finalize() {
+    await signUp.finalize({
+      navigate: ({ session, decorateUrl }) => {
+        const target = session?.currentTask ? `/sign-up/tasks/${session.currentTask.key}` : "/onboarding";
+        const url = decorateUrl(target);
+        if (url.startsWith("http")) window.location.href = url;
+        else router.push(url);
+      },
+    });
+  }
+
   const onSubmit = (data: RegisterFormData) => {
     setServerError(null);
-    startTransition(async () => {
-      const result = await registerAction(data);
-      if (result?.error) setServerError(result.error);
-    });
+    if (isSignedIn) {
+      router.replace("/dashboard");
+      return;
+    }
+    void (async () => {
+      const { error } = await signUp.password({
+        emailAddress: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        password: data.password,
+      });
+      if (error) {
+        setServerError(messageFrom(error));
+        return;
+      }
+      const { error: verificationError } = await signUp.verifications.sendEmailCode();
+      if (verificationError) {
+        setServerError(messageFrom(verificationError));
+        return;
+      }
+      setIsVerifying(true);
+    })().catch((error) => setServerError(messageFrom(error)));
   };
 
   function handleGoogleSignUp() {
     setServerError(null);
-    startGoogleTransition(async () => {
-      const result = await googleSignInAction();
-      if (result?.error) setServerError(result.error);
-    });
+    if (isSignedIn) {
+      router.replace("/dashboard");
+      return;
+    }
+    void signUp.sso({
+      redirectCallbackUrl: "/sso-callback",
+      redirectUrl: "/onboarding",
+      strategy: "oauth_google",
+    }).then(({ error }) => {
+      if (error) setServerError(messageFrom(error));
+    }).catch((error) => setServerError(messageFrom(error)));
+  }
+
+  function verifyCode() {
+    setServerError(null);
+    void (async () => {
+      const { error } = await signUp.verifications.verifyEmailCode({ code: verificationCode });
+      if (error) {
+        setServerError(messageFrom(error));
+        return;
+      }
+      if (signUp.status === "complete") await finalize();
+    })().catch((error) => setServerError(messageFrom(error)));
   }
 
   return (
@@ -63,89 +125,125 @@ export function RegisterForm({ prefillEmail = "" }: { prefillEmail?: string }) {
       </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-4">
-        {serverError && <Alert variant="error">{serverError}</Alert>}
+        {serverError ? <Alert variant="error">{serverError}</Alert> : null}
 
-        <Button
-          type="button"
-          variant="secondary"
-          fullWidth
-          size="lg"
-          loading={isGooglePending}
-          onClick={handleGoogleSignUp}
-          className="border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
-        >
-          <span className="grid h-5 w-5 place-items-center rounded-full bg-white text-sm font-bold text-slate-900">
-            G
-          </span>
-          Continue with Google
-        </Button>
+        {isVerifying ? (
+          <>
+            <Alert variant="info">Enter the verification code Clerk sent to your email.</Alert>
+            <Input
+              id="code"
+              label="Verification code"
+              inputMode="numeric"
+              value={verificationCode}
+              onChange={(event) => setVerificationCode(event.target.value)}
+            />
+            <Button type="button" fullWidth size="lg" loading={isPending} onClick={verifyCode}>
+              Verify and continue
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              fullWidth
+              onClick={() => {
+                setServerError(null);
+                void signUp.verifications
+                  .sendEmailCode()
+                  .then(({ error }) => {
+                    if (error) setServerError(messageFrom(error));
+                  })
+                  .catch((error) => setServerError(messageFrom(error)));
+              }}
+            >
+              Send another code
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              fullWidth
+              size="lg"
+              loading={isPending}
+              onClick={handleGoogleSignUp}
+              className="border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
+            >
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-white text-sm font-bold text-slate-900">
+                G
+              </span>
+              Continue with Google
+            </Button>
 
-        <div className="flex items-center gap-3 py-1">
-          <div className="h-px flex-1 bg-slate-200" />
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">or</span>
-          <div className="h-px flex-1 bg-slate-200" />
-        </div>
+            <div className="flex items-center gap-3 py-1">
+              <div className="h-px flex-1 bg-slate-200" />
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">or</span>
+              <div className="h-px flex-1 bg-slate-200" />
+            </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            {...form.register("firstName")}
-            id="firstName"
-            label="First name"
-            placeholder="Reem"
-            autoComplete="given-name"
-            autoFocus
-            leftIcon={<User className="h-4 w-4" />}
-            error={form.formState.errors.firstName?.message}
-          />
-          <Input
-            {...form.register("lastName")}
-            id="lastName"
-            label="Last name"
-            placeholder="Al-Mansoori"
-            autoComplete="family-name"
-            leftIcon={<User className="h-4 w-4" />}
-            error={form.formState.errors.lastName?.message}
-          />
-        </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                {...form.register("firstName")}
+                id="firstName"
+                label="First name"
+                placeholder="Reem"
+                autoComplete="given-name"
+                autoFocus
+                leftIcon={<User className="h-4 w-4" />}
+                error={form.formState.errors.firstName?.message}
+              />
+              <Input
+                {...form.register("lastName")}
+                id="lastName"
+                label="Last name"
+                placeholder="Al-Mansoori"
+                autoComplete="family-name"
+                leftIcon={<User className="h-4 w-4" />}
+                error={form.formState.errors.lastName?.message}
+              />
+            </div>
 
-        <Input
-          {...form.register("email")}
-          id="email"
-          type="email"
-          label="Work email"
-          placeholder="reem@lumeninteriors.ae"
-          autoComplete="email"
-          leftIcon={<Mail className="h-4 w-4" />}
-          error={form.formState.errors.email?.message}
-        />
+            <Input
+              {...form.register("email")}
+              id="email"
+              type="email"
+              label="Work email"
+              placeholder="reem@lumeninteriors.ae"
+              autoComplete="email"
+              leftIcon={<Mail className="h-4 w-4" />}
+              error={form.formState.errors.email?.message}
+            />
 
-        <Input
-          {...form.register("password", {
-            onChange: (e) => setWatchedPassword(e.target.value),
-          })}
-          id="password"
-          type="password"
-          label="Password"
-          placeholder="Min. 8 characters"
-          autoComplete="new-password"
-          error={form.formState.errors.password?.message}
-        />
+            <Input
+              {...form.register("password", {
+                onChange: (e) => setWatchedPassword(e.target.value),
+              })}
+              id="password"
+              type="password"
+              label="Password"
+              placeholder="Min. 8 characters"
+              autoComplete="new-password"
+              error={form.formState.errors.password?.message}
+            />
 
-        {watchedPassword && <PasswordStrength password={watchedPassword} />}
+            {watchedPassword ? <PasswordStrength password={watchedPassword} /> : null}
 
-        <Input
-          {...form.register("confirmPassword")}
-          id="confirmPassword"
-          type="password"
-          label="Confirm password"
-          placeholder="••••••••"
-          autoComplete="new-password"
-          error={form.formState.errors.confirmPassword?.message}
-        />
+            <Input
+              {...form.register("confirmPassword")}
+              id="confirmPassword"
+              type="password"
+              label="Confirm password"
+              placeholder="••••••••"
+              autoComplete="new-password"
+              error={form.formState.errors.confirmPassword?.message}
+            />
 
-        <Button type="submit" fullWidth size="lg" loading={isPending} className="mt-2">
-          Create workspace
-        </Button>
+            <div id="clerk-captcha" />
+
+            <Button type="submit" fullWidth size="lg" loading={isPending} className="mt-2">
+              Create workspace
+            </Button>
+          </>
+        )}
       </form>
 
       <p className="mt-6 text-center text-sm text-slate-500">

@@ -1,87 +1,110 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuth, useSignIn } from "@clerk/nextjs";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Mail } from "lucide-react";
 import { loginSchema, type LoginFormData } from "@/lib/validations";
-import { googleSignInAction, loginAction } from "@/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
 
+function messageFrom(error: unknown) {
+  if (!error) return "Sign in failed. Please try again.";
+  if (typeof error === "object" && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+  return "Sign in failed. Please try again.";
+}
+
 export function LoginForm() {
-  const [isPending, startTransition] = useTransition();
-  const [isGooglePending, startGoogleTransition] = useTransition();
-  const [serverError, setServerError] = useState<{ message: string; code?: string } | null>(null);
-  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
-  const [resentSuccess, setResentSuccess] = useState(false);
-  const [resendPending, setResendPending] = useState(false);
-  const [roles, setRoles] = useState<string[]>([]);
-  const [rolesLoading, setRolesLoading] = useState(false);
+  const router = useRouter();
+  const { isSignedIn } = useAuth();
+  const { signIn, fetchStatus } = useSignIn();
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [needsEmailCode, setNeedsEmailCode] = useState(false);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "", remember: false, selectedRole: "" },
   });
-  const email = form.watch("email");
 
-  useEffect(() => {
-    const normalizedEmail = email?.trim().toLowerCase();
-    if (!normalizedEmail || !normalizedEmail.includes("@")) {
-      setRoles([]);
-      form.setValue("selectedRole", "");
-      return;
-    }
+  const isPending = fetchStatus === "fetching";
 
-    const timer = window.setTimeout(async () => {
-      setRolesLoading(true);
-      try {
-        const response = await fetch(`/api/auth/roles?email=${encodeURIComponent(normalizedEmail)}`);
-        const body = await response.json().catch(() => ({ roles: [] }));
-        const nextRoles = Array.isArray(body.roles) ? body.roles : [];
-        setRoles(nextRoles);
-        form.setValue("selectedRole", nextRoles[0] ?? "");
-      } finally {
-        setRolesLoading(false);
-      }
-    }, 350);
-
-    return () => window.clearTimeout(timer);
-  }, [email, form]);
+  async function finalize(destination = "/dashboard") {
+    await signIn.finalize({
+      navigate: ({ session, decorateUrl }) => {
+        const target = session?.currentTask ? `/sign-in/tasks/${session.currentTask.key}` : destination;
+        const url = decorateUrl(target);
+        if (url.startsWith("http")) window.location.href = url;
+        else router.push(url);
+      },
+    });
+  }
 
   const onSubmit = (data: LoginFormData) => {
     setServerError(null);
-    setUnverifiedEmail(null);
+    setNeedsEmailCode(false);
+    if (isSignedIn) {
+      router.replace("/dashboard");
+      return;
+    }
 
-    startTransition(async () => {
-      const result = await loginAction(data);
-      if (result?.error) {
-        setServerError({ message: result.error, code: result.code });
-        if (result.code === "email_not_verified") {
-          setUnverifiedEmail(data.email);
-        }
+    void (async () => {
+      const { error } = await signIn.password({
+        emailAddress: data.email,
+        password: data.password,
+      });
+      if (error) {
+        setServerError(messageFrom(error));
+        return;
       }
-    });
+      if (signIn.status === "complete") {
+        await finalize("/dashboard");
+        return;
+      }
+      if (signIn.status === "needs_client_trust") {
+        const { error: verificationError } = await signIn.mfa.sendEmailCode();
+        if (verificationError) {
+          setServerError(messageFrom(verificationError));
+          return;
+        }
+        setNeedsEmailCode(true);
+        return;
+      }
+      setServerError("Additional verification is required for this account.");
+    })().catch((error) => setServerError(messageFrom(error)));
   };
 
   function handleGoogleSignIn() {
     setServerError(null);
-    setUnverifiedEmail(null);
-    startGoogleTransition(async () => {
-      const result = await googleSignInAction();
-      if (result?.error) setServerError({ message: result.error, code: result.code });
-    });
+    if (isSignedIn) {
+      router.replace("/dashboard");
+      return;
+    }
+    void signIn.sso({
+      redirectCallbackUrl: "/sso-callback",
+      redirectUrl: "/dashboard",
+      strategy: "oauth_google",
+    }).then(({ error }) => {
+      if (error) setServerError(messageFrom(error));
+    }).catch((error) => setServerError(messageFrom(error)));
   }
 
-  async function handleResend() {
-    if (!unverifiedEmail) return;
-    setResendPending(true);
-    const { resendVerificationAction } = await import("@/actions/auth");
-    await resendVerificationAction(unverifiedEmail);
-    setResendPending(false);
-    setResentSuccess(true);
+  function verifyEmailCode() {
+    setServerError(null);
+    void (async () => {
+      const { error } = await signIn.mfa.verifyEmailCode({ code: verificationCode });
+      if (error) {
+        setServerError(messageFrom(error));
+        return;
+      }
+      if (signIn.status === "complete") await finalize("/dashboard");
+    })().catch((error) => setServerError(messageFrom(error)));
   }
 
   return (
@@ -96,45 +119,18 @@ export function LoginForm() {
           </span>
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Welcome back</h2>
-        <p className="mt-1.5 text-sm text-slate-500">
-          Sign in to your XAI Books workspace.
-        </p>
+        <p className="mt-1.5 text-sm text-slate-500">Sign in to your XAI Books workspace.</p>
       </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-4">
-        {serverError && serverError.code !== "email_not_verified" && (
-          <Alert variant="error">{serverError.message}</Alert>
-        )}
-
-        {serverError?.code === "email_not_verified" && (
-          <Alert
-            variant="warning"
-            title="Email not verified"
-            action={
-              resentSuccess ? (
-                <p className="text-xs font-medium text-emerald-700">Verification email sent!</p>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  disabled={resendPending}
-                  className="text-xs font-semibold text-amber-700 underline underline-offset-2 hover:text-amber-900 disabled:opacity-60"
-                >
-                  {resendPending ? "Sending…" : "Resend verification email"}
-                </button>
-              )
-            }
-          >
-            {serverError.message}
-          </Alert>
-        )}
+        {serverError ? <Alert variant="error">{serverError}</Alert> : null}
 
         <Button
           type="button"
           variant="secondary"
           fullWidth
           size="lg"
-          loading={isGooglePending}
+          loading={isPending}
           onClick={handleGoogleSignIn}
           className="border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
         >
@@ -172,23 +168,15 @@ export function LoginForm() {
           error={form.formState.errors.password?.message}
         />
 
-        <label className="block space-y-1.5">
-          <span className="text-sm font-medium text-slate-700">Login As</span>
-          <select
-            {...form.register("selectedRole")}
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15"
-            disabled={rolesLoading || roles.length === 0}
-          >
-            {roles.length === 0 ? (
-              <option value="">{rolesLoading ? "Loading roles..." : "Enter email to load roles"}</option>
-            ) : (
-              roles.map((role) => <option key={role} value={role}>{role}</option>)
-            )}
-          </select>
-          <span className="block text-xs text-slate-400">
-            Only roles assigned to this user are shown.
-          </span>
-        </label>
+        {needsEmailCode ? (
+          <Input
+            id="code"
+            label="Verification code"
+            inputMode="numeric"
+            value={verificationCode}
+            onChange={(event) => setVerificationCode(event.target.value)}
+          />
+        ) : null}
 
         <div className="flex items-center justify-between">
           <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
@@ -207,9 +195,15 @@ export function LoginForm() {
           </Link>
         </div>
 
-        <Button type="submit" fullWidth size="lg" loading={isPending} className="mt-2">
-          Sign in
-        </Button>
+        {needsEmailCode ? (
+          <Button type="button" fullWidth size="lg" loading={isPending} onClick={verifyEmailCode} className="mt-2">
+            Verify code
+          </Button>
+        ) : (
+          <Button type="submit" fullWidth size="lg" loading={isPending} className="mt-2">
+            Sign in
+          </Button>
+        )}
       </form>
 
       <p className="mt-6 text-center text-sm text-slate-500">
@@ -220,10 +214,6 @@ export function LoginForm() {
         >
           Create a workspace
         </Link>
-      </p>
-
-      <p className="mt-5 flex items-center justify-center gap-1.5 text-xs text-slate-400">
-        <span>🌐</span> English (UAE) · العربية coming soon
       </p>
     </div>
   );

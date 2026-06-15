@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  createUserSchema,
+  inviteUserSchema,
   updateManagedUserSchema,
   userListQuerySchema,
 } from "@/lib/user-management-validations";
@@ -15,8 +15,8 @@ describe("user-management validations", () => {
     });
   });
 
-  it("normalizes create-user input and applies defaults", () => {
-    const parsed = createUserSchema.parse({
+  it("normalizes invite-user input and applies defaults", () => {
+    const parsed = inviteUserSchema.parse({
       email: "ADMIN@EXAMPLE.COM",
       firstName: "  Ada ",
       lastName: " Lovelace ",
@@ -26,11 +26,8 @@ describe("user-management validations", () => {
     expect(parsed).toEqual({
       email: "admin@example.com",
       firstName: "Ada",
-      jobTitle: "",
       lastName: "Lovelace",
-      phone: "",
       role: "ADMIN",
-      status: "ACTIVE",
     });
   });
 
