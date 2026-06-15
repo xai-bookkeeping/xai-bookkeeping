@@ -5,16 +5,15 @@ const coverageTargets = [
   "lib/account-validations.ts",
   "lib/admin-validations.ts",
   "lib/api-utils.ts",
+  "lib/get-current-user.ts",
   "lib/permissions.ts",
-  "lib/rate-limit.ts",
-  "lib/tokens.ts",
   "lib/user-management-validations.ts",
-  "app/api/account/password/route.ts",
   "app/api/account/profile/route.ts",
-  "app/api/account/sessions/route.ts",
   "app/api/administration/roles/route.ts",
   "app/api/administration/sql/route.ts",
   "app/api/users/route.ts",
+  "app/api/users/invite/route.ts",
+  "app/api/webhooks/clerk/route.ts",
 ];
 
 export default defineConfig({

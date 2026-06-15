@@ -1,35 +1,42 @@
-import { auth } from "@/auth";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 
-const publicRoutes = [
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-  "/verify-email",
-];
+const isAuthPage = createRouteMatcher([
+  "/accept-invite(.*)",
+  "/forgot-password(.*)",
+  "/login(.*)",
+  "/register(.*)",
+  "/reset-password(.*)",
+  "/sso-callback(.*)",
+  "/verify-email(.*)",
+]);
 
-const authOnlyRoutes = ["/dashboard"];
+const isProtectedPage = createRouteMatcher([
+  "/accounting(.*)",
+  "/administration(.*)",
+  "/audit(.*)",
+  "/company(.*)",
+  "/customers(.*)",
+  "/dashboard(.*)",
+  "/expenses(.*)",
+  "/invoices(.*)",
+  "/onboarding(.*)",
+  "/payments(.*)",
+  "/reports(.*)",
+  "/settings(.*)",
+  "/suppliers(.*)",
+  "/users(.*)",
+]);
 
-export default auth((req: NextRequest & { auth: unknown }) => {
-  const { nextUrl } = req;
-  const session = (req as { auth?: { sessionExpired?: boolean } }).auth;
-  const isLoggedIn = Boolean(session);
-  const sessionExpired = Boolean(session?.sessionExpired);
-  const path = nextUrl.pathname;
+export default clerkMiddleware(async (auth, req) => {
+  const authState = await auth();
 
-  const isPublic = publicRoutes.some((route) => path === route);
-  const isProtected = authOnlyRoutes.some((route) => path === route || path.startsWith(`${route}/`));
-
-  if (isLoggedIn && !sessionExpired && isPublic) {
-    return NextResponse.redirect(new URL("/dashboard", nextUrl));
+  if (authState.isAuthenticated && isAuthPage(req)) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  if ((!isLoggedIn || sessionExpired) && isProtected) {
-    const loginUrl = new URL("/login", nextUrl);
-    loginUrl.searchParams.set("callbackUrl", path);
-    return NextResponse.redirect(loginUrl);
+  if (isProtectedPage(req)) {
+    await auth.protect({ unauthenticatedUrl: new URL("/login", req.url).toString() });
   }
 
   return NextResponse.next();
@@ -37,6 +44,7 @@ export default auth((req: NextRequest & { auth: unknown }) => {
 
 export const config = {
   matcher: [
-    "/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.png|.*\\.jpg|.*\\.svg).*)",
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
   ],
 };

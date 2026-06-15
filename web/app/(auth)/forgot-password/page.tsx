@@ -9,9 +9,9 @@ export default function ForgotPasswordPage() {
     <>
       <AuthLeft
         headline="Locked out? We'll get you back in."
-        subline="Enter your work email and we'll send you a secure link to reset your password."
+        subline="Enter your work email and Clerk will send a one-time code to reset your password."
         features={[
-          { text: "Reset link expires after 1 hour for your security" },
+          { text: "Email code verification before password changes" },
           { text: "Previous sessions remain active until you sign out" },
           { text: "Contact support if you've lost access to your email" },
         ]}

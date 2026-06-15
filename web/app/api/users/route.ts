@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin, requestContext, validationError } from "@/lib/api-utils";
-import { logAuditEvent } from "@/lib/audit";
+import { requireAdmin, validationError } from "@/lib/api-utils";
 import { db } from "@/lib/db";
-import { sendPasswordResetEmail } from "@/lib/email";
-import { createPasswordResetToken, generateToken, hashPassword } from "@/lib/tokens";
-import { createUserSchema, userListQuerySchema } from "@/lib/user-management-validations";
+import { userListQuerySchema } from "@/lib/user-management-validations";
 
 const PAGE_SIZE = 12;
 
@@ -55,7 +52,6 @@ export async function GET(request: NextRequest) {
         jobTitle: true,
         role: true,
         status: true,
-        emailVerified: true,
         lastLoginAt: true,
         createdAt: true,
       },
@@ -75,59 +71,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const { error, session } = await requireAdmin();
+  const { error } = await requireAdmin();
   if (error) return error;
 
-  const body = await request.json().catch(() => null);
-  const parsed = createUserSchema.safeParse(body);
-  if (!parsed.success) return validationError(parsed.error);
-
-  const input = parsed.data;
-  const existing = await db.user.findUnique({
-    where: { email: input.email },
-    select: { id: true },
-  });
-  if (existing) {
-    return NextResponse.json({ error: "A user with this email already exists." }, { status: 409 });
-  }
-
-  const passwordHash = await hashPassword(generateToken());
-  const user = await db.user.create({
-    data: {
-      email: input.email,
-      firstName: input.firstName,
-      lastName: input.lastName,
-      phone: input.phone || null,
-      jobTitle: input.jobTitle || null,
-      passwordHash,
-      role: input.role,
-      status: input.status,
-      emailVerified: input.status === "ACTIVE",
-      emailVerifiedAt: input.status === "ACTIVE" ? new Date() : null,
-    },
-  });
-
-  const token = await createPasswordResetToken(user.id);
-  const { ip, userAgent } = await requestContext();
-
-  try {
-    await sendPasswordResetEmail(
-      user.email,
-      `${user.firstName} ${user.lastName}`.trim(),
-      token,
-    );
-  } catch {
-    // Non-fatal. Admin can send another password setup link from the table.
-  }
-
-  await logAuditEvent({
-    action: "USER_CREATED_BY_ADMIN",
-    email: user.email,
-    ip,
-    userAgent,
-    userId: user.id,
-    metadata: { actorId: session?.user.id, role: user.role, status: user.status },
-  });
-
-  return NextResponse.json({ user }, { status: 201 });
+  await request.json().catch(() => null);
+  return NextResponse.json({ error: "Create users through Clerk invitations." }, { status: 400 });
 }

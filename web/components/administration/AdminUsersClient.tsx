@@ -12,13 +12,11 @@ type AdminUser = {
   createdAt: string;
   displayName: string | null;
   email: string;
-  emailVerified: boolean;
   firstName: string;
   jobTitle: string | null;
   lastLoginAt: string | null;
   lastName: string;
   onboardingCompleted: boolean;
-  passwordLoginEnabled: boolean;
   phone: string | null;
   role: string;
   roleIds: string[];
@@ -75,12 +73,10 @@ export function AdminUsersClient({
         body: JSON.stringify({
           displayName: draft.displayName,
           email: draft.email,
-          emailVerified: draft.emailVerified,
           firstName: draft.firstName,
           jobTitle: draft.jobTitle,
           lastName: draft.lastName,
           onboardingCompleted: draft.onboardingCompleted,
-          passwordLoginEnabled: draft.passwordLoginEnabled,
           phone: draft.phone,
           role: draft.role,
           roleIds: draft.roleIds,
@@ -175,8 +171,6 @@ export function AdminUsersClient({
             <div className="grid gap-2 rounded-xl border border-slate-200 p-3">
               <p className="text-sm font-semibold text-slate-900">Flags</p>
               {[
-                ["emailVerified", "Email verified"],
-                ["passwordLoginEnabled", "Password login enabled"],
                 ["onboardingCompleted", "Onboarding completed"],
               ].map(([key, label]) => (
                 <label key={key} className="flex items-center gap-2 text-sm text-slate-700">

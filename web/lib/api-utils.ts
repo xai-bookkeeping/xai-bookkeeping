@@ -1,9 +1,9 @@
-import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { getCurrentUser } from "@/lib/get-current-user";
 
 export async function requireUser() {
-  const session = await auth();
+  const session = await getCurrentUser();
 
   if (!session || session.sessionExpired) {
     return {

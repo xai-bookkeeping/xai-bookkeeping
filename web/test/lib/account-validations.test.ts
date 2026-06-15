@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  changePasswordSchema,
   companyUpdateSchema,
   profileUpdateSchema,
 } from "@/lib/account-validations";
@@ -41,13 +40,4 @@ describe("account validations", () => {
     expect(parsed.accentColor).toBe("#22c55e");
   });
 
-  it("rejects password confirmation mismatches", () => {
-    const result = changePasswordSchema.safeParse({
-      confirmPassword: "Different1!",
-      currentPassword: "Current1!",
-      password: "NextPass1!",
-    });
-
-    expect(result.success).toBe(false);
-  });
 });
